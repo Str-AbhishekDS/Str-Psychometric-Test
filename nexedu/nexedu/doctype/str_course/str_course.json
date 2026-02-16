@@ -1,0 +1,120 @@
+{
+ "actions": [],
+ "autoname": "field:course_name",
+ "creation": "2026-02-03 13:36:14.705838",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course_name",
+  "program",
+  "credit",
+  "theory_marks",
+  "is_active",
+  "column_break_zfll",
+  "course_code",
+  "semester",
+  "course_type",
+  "practical_marks",
+  "section_break_lopv",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "course_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "course_code",
+   "fieldtype": "Data",
+   "label": "Course Code",
+   "unique": 1
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Program",
+   "options": "Str Program D",
+   "reqd": 1
+  },
+  {
+   "fieldname": "semester",
+   "fieldtype": "Select",
+   "label": "Semester",
+   "reqd": 1
+  },
+  {
+   "fieldname": "credit",
+   "fieldtype": "Int",
+   "label": "Credit"
+  },
+  {
+   "fieldname": "course_type",
+   "fieldtype": "Select",
+   "label": "Course Type",
+   "options": "Core\nElective"
+  },
+  {
+   "fieldname": "theory_marks",
+   "fieldtype": "Int",
+   "label": "Theory Marks"
+  },
+  {
+   "fieldname": "practical_marks",
+   "fieldtype": "Int",
+   "label": "Practical Marks"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "column_break_zfll",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_lopv",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-04 12:26:03.018489",
+ "modified_by": "Administrator",
+ "module": "Nexedu",
+ "name": "Str Course",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

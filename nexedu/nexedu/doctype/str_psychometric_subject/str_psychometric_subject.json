@@ -1,0 +1,80 @@
+{
+ "actions": [],
+ "autoname": "field:subject_name",
+ "creation": "2026-02-07 14:54:27.256328",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "subject_name",
+  "subject_code",
+  "test_type",
+  "description",
+  "display_order",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "subject_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Subject Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "subject_code",
+   "fieldtype": "Data",
+   "label": "Subject Code"
+  },
+  {
+   "fieldname": "test_type",
+   "fieldtype": "Link",
+   "label": "Test Type",
+   "options": "Str Psychometric Test-Type"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "display_order",
+   "fieldtype": "Int",
+   "label": "Display Order"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-07 15:11:43.202621",
+ "modified_by": "Administrator",
+ "module": "Nexedu",
+ "name": "Str Psychometric Subject",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

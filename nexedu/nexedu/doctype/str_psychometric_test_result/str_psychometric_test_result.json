@@ -1,0 +1,106 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-07 17:57:39.658732",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "test",
+  "section_break_nlqx",
+  "question",
+  "section_break_fztv",
+  "question_name",
+  "answer",
+  "column_break_flus",
+  "marks",
+  "marks_out_of",
+  "is_correct"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_fztv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "question_name",
+   "fieldtype": "Link",
+   "label": "Question Name",
+   "options": "Str Question"
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Users Response",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_flus",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "marks",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Marks"
+  },
+  {
+   "fieldname": "marks_out_of",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Marks out of",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Correct"
+  },
+  {
+   "fieldname": "test",
+   "fieldtype": "Link",
+   "label": "Test",
+   "options": "Str Psychometric Test"
+  },
+  {
+   "fieldname": "section_break_nlqx",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-10 12:50:29.038160",
+ "modified_by": "Administrator",
+ "module": "Nexedu",
+ "name": "Str Psychometric Test Result",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

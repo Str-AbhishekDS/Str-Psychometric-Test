@@ -1,0 +1,252 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "{test_type}-.####",
+ "creation": "2026-02-10 13:03:09.544578",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_ocdb",
+  "test_type",
+  "question_index",
+  "question_type",
+  "is_last",
+  "section_break_zfqc",
+  "question",
+  "section_break_hjyw",
+  "a",
+  "is_correct_a",
+  "c",
+  "is_correct_c",
+  "column_break_rwah",
+  "b",
+  "is_correct_b",
+  "d",
+  "is_correct_d",
+  "section_break_ztid",
+  "open_ended",
+  "section_break_qogj",
+  "user_input",
+  "section_break_tsnc",
+  "previous",
+  "column_break_sldg",
+  "next",
+  "section_break_znly",
+  "str_test_response",
+  "section_break_uggb",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_ocdb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Test Screen",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "test_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Test Type",
+   "options": "Str Psychometric Test",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_zfqc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Text Editor",
+   "label": "Question",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.question_type==\"Choices\";\n",
+   "fieldname": "section_break_hjyw",
+   "fieldtype": "Section Break",
+   "label": "MCQ"
+  },
+  {
+   "fieldname": "a",
+   "fieldtype": "Small Text",
+   "label": "A",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_a",
+   "fieldtype": "Check",
+   "label": "Is Correct A"
+  },
+  {
+   "fieldname": "c",
+   "fieldtype": "Small Text",
+   "label": "C",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_c",
+   "fieldtype": "Check",
+   "label": "Is Correct"
+  },
+  {
+   "fieldname": "column_break_rwah",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "b",
+   "fieldtype": "Small Text",
+   "label": "B",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_b",
+   "fieldtype": "Check",
+   "label": "Is Correct"
+  },
+  {
+   "fieldname": "d",
+   "fieldtype": "Small Text",
+   "label": "D",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_d",
+   "fieldtype": "Check",
+   "label": "Is Correct"
+  },
+  {
+   "default": "0",
+   "fieldname": "question_index",
+   "fieldtype": "Int",
+   "label": "Question Index"
+  },
+  {
+   "fieldname": "section_break_znly",
+   "fieldtype": "Section Break"
+  },
+  {
+   "columns": 3,
+   "fieldname": "next",
+   "fieldtype": "Button",
+   "label": "Next"
+  },
+  {
+   "fieldname": "str_test_response",
+   "fieldtype": "Table",
+   "label": "Str Test Response",
+   "options": "Str Test Response",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_uggb",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "depends_on": "eval:doc.question_type==\"Open Ended\";\n",
+   "fieldname": "section_break_ztid",
+   "fieldtype": "Section Break",
+   "label": "Open Ended",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "question_type",
+   "fieldtype": "Select",
+   "label": "Question Type",
+   "options": "Choices\nUser Input\nOpen Ended"
+  },
+  {
+   "depends_on": "eval:doc.question_type==\"User Input\";\n",
+   "fieldname": "section_break_qogj",
+   "fieldtype": "Section Break",
+   "label": "User Input"
+  },
+  {
+   "fieldname": "user_input",
+   "fieldtype": "Small Text",
+   "label": "Answer"
+  },
+  {
+   "fieldname": "open_ended",
+   "fieldtype": "Small Text",
+   "label": "Answer"
+  },
+  {
+   "depends_on": "eval:doc.question_index >= 1",
+   "fieldname": "previous",
+   "fieldtype": "Button",
+   "label": "Previous"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_last",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Last"
+  },
+  {
+   "fieldname": "section_break_tsnc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_sldg",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-02-14 12:44:52.652285",
+ "modified_by": "Administrator",
+ "module": "Nexedu",
+ "name": "Student Test Screen",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

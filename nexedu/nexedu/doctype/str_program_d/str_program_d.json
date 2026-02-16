@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "autoname": "field:program_name",
+ "creation": "2026-02-03 14:44:58.101516",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "program_name",
+  "program_code",
+  "program_type",
+  "program_mode",
+  "program_formats",
+  "is_active",
+  "column_break_ywex",
+  "program_group",
+  "duration_years",
+  "total_semesters",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "program_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Program Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "program_code",
+   "fieldtype": "Data",
+   "label": "Program Code",
+   "unique": 1
+  },
+  {
+   "fieldname": "program_type",
+   "fieldtype": "Link",
+   "label": "Program Type",
+   "options": "Str Program Type"
+  },
+  {
+   "fieldname": "duration_years",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Duration (Years)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_semesters",
+   "fieldtype": "Int",
+   "label": "Total Semesters",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "column_break_ywex",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "program_formats",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Formats",
+   "options": "Str Program Format",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_mode",
+   "fieldtype": "Link",
+   "label": "Program Mode",
+   "options": "Str Program Mode"
+  },
+  {
+   "fieldname": "program_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Program Group",
+   "options": "Str Program Group",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-04 12:08:22.143489",
+ "modified_by": "Administrator",
+ "module": "Nexedu",
+ "name": "Str Program D",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
