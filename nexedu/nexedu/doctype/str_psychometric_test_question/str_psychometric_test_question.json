@@ -8,8 +8,10 @@
   "section_break_huup",
   "question",
   "psychometric_test_subject",
+  "column_break_bdzr",
   "marks",
   "type",
+  "section_break_marl",
   "question_detail"
  ],
  "fields": [
@@ -22,7 +24,6 @@
    "reqd": 1
   },
   {
-   "default": "1",
    "fieldname": "marks",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -55,13 +56,21 @@
    "fieldname": "psychometric_test_subject",
    "fieldtype": "Data",
    "label": "Psychometric Test Subject"
+  },
+  {
+   "fieldname": "column_break_bdzr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_marl",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-14 16:37:26.432470",
+ "modified": "2026-02-17 17:14:42.471262",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Str Psychometric Test Question",

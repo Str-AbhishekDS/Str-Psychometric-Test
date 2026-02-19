@@ -6,4 +6,23 @@ from frappe.model.document import Document
 
 
 class StrQuestion(Document):
-	pass
+	def validate(self):
+
+		# If multiple correct is enabled
+		if self.multiple_correct_answers:
+
+			for i in range(1, 11):
+
+				option_value = self.get(f"option_{i}")
+
+				if option_value:
+					self.set(f"is_correct_{i}", 1)
+
+		# else:
+
+		# 	# # If unchecked, remove all correct flags
+		# 	# for i in range(1, 11):
+
+		# 	# 	if self.get(f"is_correct_{i}"):
+		# 	# 		self.set(f"is_correct_{i}", 0)
+

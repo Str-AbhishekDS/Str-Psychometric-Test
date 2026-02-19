@@ -1,0 +1,131 @@
+{
+ "actions": [],
+ "autoname": "field:university_name",
+ "creation": "2026-01-30 18:02:59.535300",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "university_information_section",
+  "university_name",
+  "university_code",
+  "university_type",
+  "established_year",
+  "website",
+  "is_active",
+  "column_break_zulv",
+  "country",
+  "state",
+  "district",
+  "city",
+  "sort_order"
+ ],
+ "fields": [
+  {
+   "fieldname": "university_information_section",
+   "fieldtype": "Section Break",
+   "label": "University Information"
+  },
+  {
+   "fieldname": "university_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "University Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "university_code",
+   "fieldtype": "Data",
+   "label": "University Code"
+  },
+  {
+   "fieldname": "university_type",
+   "fieldtype": "Link",
+   "label": "University Type",
+   "options": "University Type"
+  },
+  {
+   "fieldname": "established_year",
+   "fieldtype": "Int",
+   "label": "Established Year"
+  },
+  {
+   "fieldname": "website",
+   "fieldtype": "Data",
+   "label": "Website"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "column_break_zulv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "country",
+   "fieldtype": "Link",
+   "label": "Country",
+   "options": "Country",
+   "reqd": 1
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Link",
+   "label": "State",
+   "options": "State",
+   "reqd": 1
+  },
+  {
+   "fieldname": "district",
+   "fieldtype": "Link",
+   "label": "District",
+   "options": "District",
+   "reqd": 1
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "City",
+   "options": "City",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sort_order",
+   "fieldtype": "Int",
+   "label": "Sort Order"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-19 12:02:37.161041",
+ "modified_by": "Administrator",
+ "module": "Nexedu",
+ "name": "University",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

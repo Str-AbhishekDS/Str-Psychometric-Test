@@ -8,21 +8,33 @@
  "field_order": [
   "section_break_ocdb",
   "test_type",
-  "question_index",
+  "subject",
+  "column_break_xxuf",
   "question_type",
-  "is_last",
   "section_break_zfqc",
   "question",
   "section_break_hjyw",
-  "a",
-  "is_correct_a",
-  "c",
-  "is_correct_c",
+  "field_1",
+  "is_selected_1",
+  "field_3",
+  "is_selected_3",
+  "field_5",
+  "is_selected_5",
+  "field_7",
+  "is_selected_7",
+  "field_9",
+  "is_selected_9",
   "column_break_rwah",
-  "b",
-  "is_correct_b",
-  "d",
-  "is_correct_d",
+  "field_2",
+  "is_selected_2",
+  "field_4",
+  "is_selected_4",
+  "field_6",
+  "is_selected_6",
+  "field_8",
+  "is_selected_8",
+  "field_10",
+  "is_selected_10",
   "section_break_ztid",
   "open_ended",
   "section_break_qogj",
@@ -33,6 +45,12 @@
   "next",
   "section_break_znly",
   "str_test_response",
+  "section_break_ayfe",
+  "str_psychometric_group_submission",
+  "section_break_inrj",
+  "question_index",
+  "is_last",
+  "no_of_options",
   "section_break_uggb",
   "amended_from"
  ],
@@ -76,56 +94,8 @@
    "label": "MCQ"
   },
   {
-   "fieldname": "a",
-   "fieldtype": "Small Text",
-   "label": "A",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_correct_a",
-   "fieldtype": "Check",
-   "label": "Is Correct A"
-  },
-  {
-   "fieldname": "c",
-   "fieldtype": "Small Text",
-   "label": "C",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_correct_c",
-   "fieldtype": "Check",
-   "label": "Is Correct"
-  },
-  {
    "fieldname": "column_break_rwah",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "b",
-   "fieldtype": "Small Text",
-   "label": "B",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_correct_b",
-   "fieldtype": "Check",
-   "label": "Is Correct"
-  },
-  {
-   "fieldname": "d",
-   "fieldtype": "Small Text",
-   "label": "D",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_correct_d",
-   "fieldtype": "Check",
-   "label": "Is Correct"
   },
   {
    "default": "0",
@@ -147,8 +117,7 @@
    "fieldname": "str_test_response",
    "fieldtype": "Table",
    "label": "Str Test Response",
-   "options": "Str Test Response",
-   "read_only": 1
+   "options": "Str Test Response"
   },
   {
    "fieldname": "section_break_uggb",
@@ -194,7 +163,6 @@
    "default": "0",
    "fieldname": "is_last",
    "fieldtype": "Check",
-   "hidden": 1,
    "label": "Is Last"
   },
   {
@@ -204,13 +172,153 @@
   {
    "fieldname": "column_break_sldg",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "no_of_options",
+   "fieldtype": "Select",
+   "label": "No of Options",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_1",
+   "fieldtype": "Check",
+   "label": "Select 1"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_3",
+   "fieldtype": "Check",
+   "label": "Select 3"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_5",
+   "fieldtype": "Check",
+   "label": "Select 5"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_7",
+   "fieldtype": "Check",
+   "label": "Select 7"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_9",
+   "fieldtype": "Check",
+   "label": "Select 9"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_2",
+   "fieldtype": "Check",
+   "label": "Select 2"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_4",
+   "fieldtype": "Check",
+   "label": "Select 4"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_6",
+   "fieldtype": "Check",
+   "label": "Select 6"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_8",
+   "fieldtype": "Check",
+   "label": "Select 8"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_10",
+   "fieldtype": "Check",
+   "label": "Select 10"
+  },
+  {
+   "fieldname": "field_1",
+   "fieldtype": "Small Text",
+   "label": "A"
+  },
+  {
+   "fieldname": "field_3",
+   "fieldtype": "Small Text",
+   "label": "C"
+  },
+  {
+   "fieldname": "field_5",
+   "fieldtype": "Small Text",
+   "label": "E"
+  },
+  {
+   "fieldname": "field_7",
+   "fieldtype": "Small Text",
+   "label": "G"
+  },
+  {
+   "fieldname": "field_9",
+   "fieldtype": "Small Text",
+   "label": "I"
+  },
+  {
+   "fieldname": "field_2",
+   "fieldtype": "Small Text",
+   "label": "B"
+  },
+  {
+   "fieldname": "field_4",
+   "fieldtype": "Small Text",
+   "label": "D"
+  },
+  {
+   "fieldname": "field_6",
+   "fieldtype": "Small Text",
+   "label": "F"
+  },
+  {
+   "fieldname": "field_8",
+   "fieldtype": "Small Text",
+   "label": "H"
+  },
+  {
+   "fieldname": "field_10",
+   "fieldtype": "Small Text",
+   "label": "J"
+  },
+  {
+   "fieldname": "column_break_xxuf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Link",
+   "label": "Subject",
+   "options": "Str Psychometric Subject"
+  },
+  {
+   "fieldname": "section_break_ayfe",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "str_psychometric_group_submission",
+   "fieldtype": "Table",
+   "label": "Str Psychometric Group Submission",
+   "options": "Str Psychometric Group Submission"
+  },
+  {
+   "fieldname": "section_break_inrj",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-14 12:44:52.652285",
+ "modified": "2026-02-18 18:47:43.919627",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Student Test Screen",

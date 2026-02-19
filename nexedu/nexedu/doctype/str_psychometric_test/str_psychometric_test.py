@@ -10,20 +10,20 @@ class StrPsychometricTest(Document):
         self.validate_questions_subject()
 
     def validate_questions_subject(self):
-        if not self.subject:
-            frappe.throw("Please select Subject")
 
-        for row in self.questions:
-            question_subject = frappe.db.get_value(
-                "Question",
-                row.question,
-                "subject"
-            )
+        if not self.psychometric_test_subject:
+            frappe.throw("Please add at least one Subject")
 
-            if question_subject != self.subject:
+        selected_subjects = [
+            d.subject for d in self.psychometric_test_subject
+        ]
+
+        for row in self.str_psychometric_test_question:
+            if row.psychometric_test_subject not in selected_subjects:
                 frappe.throw(
-                    f"Question {row.question} does not belong to Subject {self.subject}"
+                    f"Question '{row.question}' does not belong to selected subjects."
                 )
+
 	
     def validate_duplicate_subjects(self):
         seen = []

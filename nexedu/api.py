@@ -70,3 +70,6 @@ def get_tests():
         "Str Psychometric Test",
         fields=["name"]
     )
+    
+    
+    

@@ -7,11 +7,14 @@
  "engine": "InnoDB",
  "field_order": [
   "question",
+  "section_break_eeod",
   "response",
   "correct_ans",
   "mark",
+  "column_break_hozw",
   "maximum_marks",
-  "type"
+  "type",
+  "subject"
  ],
  "fields": [
   {
@@ -26,28 +29,32 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Response"
+   "label": "Response",
+   "width": "2"
   },
   {
    "fieldname": "correct_ans",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Correct Ans"
+   "label": "Correct Ans",
+   "width": "2"
   },
   {
    "fieldname": "mark",
    "fieldtype": "Int",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Mark"
+   "label": "Mark",
+   "width": "1"
   },
   {
    "fieldname": "maximum_marks",
    "fieldtype": "Int",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Maximum Marks"
+   "label": "Maximum Marks",
+   "width": "1"
   },
   {
    "fieldname": "type",
@@ -56,13 +63,27 @@
    "in_standard_filter": 1,
    "label": "Type",
    "options": "Choices\nUser Input\nOpen Ended"
+  },
+  {
+   "fieldname": "section_break_eeod",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_hozw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Link",
+   "label": "Subject",
+   "options": "Str Psychometric Subject"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-12 14:52:10.545994",
+ "modified": "2026-02-18 17:37:37.314409",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Str Test Response",

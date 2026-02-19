@@ -8,31 +8,73 @@
  "field_order": [
   "question",
   "type",
-  "multiple",
+  "is_active",
   "section_break_crxh",
   "test_subject",
-  "column_break_tsjx",
-  "is_active",
+  "section_break_ulef",
+  "multiple_correct_answers",
+  "column_break_wpyu",
+  "no_of_options",
   "section_break_ytxi",
   "option_1",
   "is_correct_1",
   "column_break_fpvl",
   "explanation_1",
+  "option_1_weightage",
   "section_break_eiaa",
   "option_2",
   "is_correct_2",
   "column_break_akwy",
   "explanation_2",
+  "option_2_weightage",
   "section_break_cwqv",
   "option_3",
   "is_correct_3",
   "column_break_atpl",
   "explanation_3",
+  "option_3_weightage",
   "section_break_yqel",
   "option_4",
   "is_correct_4",
   "column_break_lknb",
   "explanation_4",
+  "option_4_weightage",
+  "section_break_tnxv",
+  "option_5",
+  "is_correct_5",
+  "column_break_ugci",
+  "explanation_5",
+  "option_5_weightage",
+  "section_break_vaig",
+  "option_6",
+  "is_correct_6",
+  "column_break_hvps",
+  "explanation_6",
+  "option_6_weightage",
+  "section_break_xtvi",
+  "option_7",
+  "is_correct_7",
+  "column_break_jlea",
+  "explanation_7",
+  "option_7_weightage",
+  "section_break_hiwc",
+  "option_8",
+  "is_correct_8",
+  "column_break_vmpn",
+  "explanation_8",
+  "option_8_weightage",
+  "section_break_gahu",
+  "option_9",
+  "is_correct_9",
+  "column_break_kxia",
+  "explanation_9",
+  "option_9_weightage",
+  "section_break_lgfx",
+  "option_10",
+  "is_correct_10",
+  "column_break_reod",
+  "explanation_10",
+  "option_10_weightage",
   "section_break_hkfe",
   "possibility_1",
   "possibility_3",
@@ -55,24 +97,20 @@
    "options": "Choices\nUser Input\nOpen Ended"
   },
   {
-   "default": "0",
-   "fieldname": "multiple",
-   "fieldtype": "Check",
-   "label": "Multiple Correct Answers"
-  },
-  {
-   "depends_on": "eval:doc.type == \"Choices\";",
+   "depends_on": "eval: doc.type == 'Choices' && doc.no_of_options > 0;",
    "fieldname": "section_break_ytxi",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "in_standard_filter": 1
   },
   {
+   "depends_on": "eval: doc.no_of_options > 0",
    "fieldname": "option_1",
    "fieldtype": "Small Text",
-   "label": "Option 1",
-   "mandatory_depends_on": "eval: doc.type == 'Choices'"
+   "label": "Option 1"
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.no_of_options > 0",
    "fieldname": "is_correct_1",
    "fieldtype": "Check",
    "label": "Is Correct"
@@ -82,23 +120,25 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.no_of_options > 0",
    "fieldname": "explanation_1",
    "fieldtype": "Small Text",
    "label": "Explanation"
   },
   {
-   "depends_on": "eval:doc.type == \"Choices\";",
+   "depends_on": "eval: doc.type == 'Choices'&& doc.no_of_options > 1;",
    "fieldname": "section_break_eiaa",
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval: doc.no_of_options > 1",
    "fieldname": "option_2",
    "fieldtype": "Small Text",
-   "label": "Option 2",
-   "mandatory_depends_on": "eval: doc.type == 'Choices'"
+   "label": "Option 2"
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.no_of_options > 1",
    "fieldname": "is_correct_2",
    "fieldtype": "Check",
    "label": "Is Correct"
@@ -108,22 +148,25 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.no_of_options > 1",
    "fieldname": "explanation_2",
    "fieldtype": "Small Text",
    "label": "Explanation "
   },
   {
-   "depends_on": "eval: doc.type == 'Choices'",
+   "depends_on": "eval: doc.type == 'Choices'&& doc.no_of_options > 2;",
    "fieldname": "section_break_cwqv",
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval: doc.no_of_options > 2",
    "fieldname": "option_3",
    "fieldtype": "Small Text",
    "label": "Option 3"
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.no_of_options > 2",
    "fieldname": "is_correct_3",
    "fieldtype": "Check",
    "label": "Is Correct"
@@ -133,22 +176,25 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.no_of_options > 2",
    "fieldname": "explanation_3",
    "fieldtype": "Small Text",
    "label": "Explanation"
   },
   {
-   "depends_on": "eval: doc.type == 'Choices'",
+   "depends_on": "eval: doc.type == 'Choices' && doc.no_of_options > 3;",
    "fieldname": "section_break_yqel",
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval: doc.no_of_options > 3",
    "fieldname": "option_4",
    "fieldtype": "Small Text",
    "label": "Option 4"
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.no_of_options > 3",
    "fieldname": "is_correct_4",
    "fieldtype": "Check",
    "label": "Is Correct"
@@ -158,6 +204,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.no_of_options > 3",
    "fieldname": "explanation_4",
    "fieldtype": "Small Text",
    "label": "Explanation"
@@ -197,10 +244,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "column_break_tsjx",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "test_subject",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -213,12 +256,259 @@
    "fieldname": "is_active",
    "fieldtype": "Check",
    "label": "Is Active"
+  },
+  {
+   "default": "4",
+   "depends_on": "eval: doc.type == 'Choices';",
+   "fieldname": "no_of_options",
+   "fieldtype": "Select",
+   "label": "No of Options",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Choices'&& doc.no_of_options > 4;",
+   "fieldname": "section_break_tnxv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval: doc.no_of_options > 4",
+   "fieldname": "option_5",
+   "fieldtype": "Small Text",
+   "label": "Option 5"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.no_of_options > 4",
+   "fieldname": "is_correct_5",
+   "fieldtype": "Check",
+   "label": "Is Correct"
+  },
+  {
+   "fieldname": "column_break_ugci",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.no_of_options > 4",
+   "fieldname": "explanation_5",
+   "fieldtype": "Small Text",
+   "label": "Explanation"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Choices' && doc.no_of_options > 5;",
+   "fieldname": "section_break_vaig",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval: doc.no_of_options > 5",
+   "fieldname": "option_6",
+   "fieldtype": "Small Text",
+   "label": "Option 6"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.no_of_options > 5",
+   "fieldname": "is_correct_6",
+   "fieldtype": "Check",
+   "label": "Is Correct",
+   "mandatory_depends_on": "eval: doc.no_of_options > 5"
+  },
+  {
+   "fieldname": "column_break_hvps",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.no_of_options > 5",
+   "fieldname": "explanation_6",
+   "fieldtype": "Small Text",
+   "label": "Explanation"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Choices' && doc.no_of_options > 6;",
+   "fieldname": "section_break_xtvi",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval: doc.no_of_options > 6",
+   "fieldname": "option_7",
+   "fieldtype": "Small Text",
+   "label": "Option 7"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.no_of_options > 6",
+   "fieldname": "is_correct_7",
+   "fieldtype": "Check",
+   "label": "Is Correct",
+   "mandatory_depends_on": "eval: doc.no_of_options > 6"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Choices' && doc.no_of_options > 7;",
+   "fieldname": "section_break_hiwc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "option_8",
+   "fieldtype": "Small Text",
+   "label": "Option 8"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_8",
+   "fieldtype": "Check",
+   "label": "Is Correct",
+   "mandatory_depends_on": "eval: doc.no_of_options > 7"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Choices' && doc.no_of_options > 8;",
+   "fieldname": "section_break_gahu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "option_9",
+   "fieldtype": "Small Text",
+   "label": "Option 9"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_9",
+   "fieldtype": "Check",
+   "label": "Is Correct",
+   "mandatory_depends_on": "eval: doc.no_of_options > 8"
+  },
+  {
+   "depends_on": "eval: doc.type == 'Choices' && doc.no_of_options > 9;",
+   "fieldname": "section_break_lgfx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "option_10",
+   "fieldtype": "Small Text",
+   "label": "Option 10"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_10",
+   "fieldtype": "Check",
+   "label": "Is Correct",
+   "mandatory_depends_on": "eval: doc.no_of_options > 9"
+  },
+  {
+   "fieldname": "column_break_jlea",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval: doc.no_of_options > 6",
+   "fieldname": "explanation_7",
+   "fieldtype": "Small Text",
+   "label": "Explanation"
+  },
+  {
+   "fieldname": "column_break_vmpn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "explanation_8",
+   "fieldtype": "Small Text",
+   "label": "Explanation"
+  },
+  {
+   "fieldname": "column_break_kxia",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "explanation_9",
+   "fieldtype": "Small Text",
+   "label": "Explanation"
+  },
+  {
+   "fieldname": "column_break_reod",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "explanation_10",
+   "fieldtype": "Small Text",
+   "label": "Explanation"
+  },
+  {
+   "fieldname": "section_break_ulef",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_1_weightage",
+   "fieldtype": "Int",
+   "label": "Option 1 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_2_weightage",
+   "fieldtype": "Int",
+   "label": "Option 2 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_3_weightage",
+   "fieldtype": "Int",
+   "label": "Option 3 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_4_weightage",
+   "fieldtype": "Int",
+   "label": "Option 4 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_5_weightage",
+   "fieldtype": "Int",
+   "label": "Option 5 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_6_weightage",
+   "fieldtype": "Int",
+   "label": "Option 6 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_7_weightage",
+   "fieldtype": "Int",
+   "label": "Option 7 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_8_weightage",
+   "fieldtype": "Int",
+   "label": "Option 8 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_9_weightage",
+   "fieldtype": "Int",
+   "label": "Option 9 weightage"
+  },
+  {
+   "depends_on": "eval: doc.multiple_correct_answers",
+   "fieldname": "option_10_weightage",
+   "fieldtype": "Int",
+   "label": "Option 10 weightage"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.type == 'Choices';",
+   "fieldname": "multiple_correct_answers",
+   "fieldtype": "Check",
+   "label": "Multiple Correct Answers"
+  },
+  {
+   "fieldname": "column_break_wpyu",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 12:09:29.257473",
+ "modified": "2026-02-18 13:58:50.372837",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Str Question",

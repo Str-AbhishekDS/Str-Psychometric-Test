@@ -7,7 +7,7 @@
 // 	},
 // });
 
-frappe.msgprint("JS Loaded");
+// frappe.msgprint("JS Loaded");
 frappe.ui.form.on('Str Psychometric Test Subject Detail', {
 
     subject: function(frm, cdt, cdn) {
@@ -71,6 +71,47 @@ frappe.ui.form.on('Str Psychometric Test', {
             };
         });
 
+    }
+
+});
+
+
+frappe.ui.form.on('Str Psychometric Test Question', {
+
+    question: function(frm, cdt, cdn) {
+
+        let row = locals[cdt][cdn];
+        if (!row.question) return;
+
+        frappe.db.get_doc("Str Question", row.question).then(q => {
+
+            let max_marks = 0;
+
+            if (q.multiple_correct_answers) {
+
+                if (q.option_1_weightage)
+                    max_marks = Math.max(max_marks, q.option_1_weightage || 0);
+
+                if (q.option_2_weightage)
+                    max_marks = Math.max(max_marks, q.option_2_weightage || 0);
+
+                if (q.option_3_weightage)
+                    max_marks = Math.max(max_marks, q.option_3_weightage || 0);
+
+                if (q.option_4_weightage)
+                    max_marks = Math.max(max_marks, q.option_4_weightage || 0);
+
+                if (q.option_5_weightage)
+                    max_marks = Math.max(max_marks, q.option_5_weightage || 0);
+
+            } else {
+
+                max_marks = q.default_marks || 1;
+            }
+
+            frappe.model.set_value(cdt, cdn, "marks", max_marks);
+
+        });
     }
 
 });

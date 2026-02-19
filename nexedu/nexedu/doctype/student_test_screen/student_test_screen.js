@@ -13,57 +13,51 @@ frappe.ui.form.on("Student Test Screen", {
         });
     },
 
-    next(frm) {
+next(frm) {
 
-        let args = {};
-        let qtype = frm.doc.question_type;
+    let qtype = frm.doc.question_type;
+    let selected_option = null;
 
-        if (qtype === "Choices") {
+    if (qtype === "Choices") {
 
-            let selected = null;
-
-            if (frm.doc.is_correct_a) selected = frm.doc.a;
-            if (frm.doc.is_correct_b) selected = frm.doc.b;
-            if (frm.doc.is_correct_c) selected = frm.doc.c;
-            if (frm.doc.is_correct_d) selected = frm.doc.d;
-
-            if (!selected) {
-                frappe.msgprint("Please select one option");
-                return;
+        for (let i = 1; i <= 10; i++) {
+            if (frm.doc[`is_selected_${i}`]) {
+                selected_option = frm.doc[`field_${i}`];
             }
-
-            args.selected_option = selected;
         }
 
-        if (qtype === "User Input") {
+        if (!selected_option) {
+            frappe.msgprint("Please select one option");
+            return;
+        }
+    }
 
-            if (!frm.doc.user_input) {
-                frappe.msgprint("Please enter answer");
-                return;
-            }
+    frm.call("next_question", {
+        selected_option: selected_option,
+        user_input: frm.doc.user_input,
+        open_ended: frm.doc.open_ended
+    }).then(r => {
 
-            args.user_input = frm.doc.user_input;
+        if (!r.message) return;
+
+        clear_all(frm);
+        set_question(frm, r.message);
+
+        // ✅ MOVE THIS INSIDE
+        if (r.message.is_last) {
+            frm.set_value("is_last", 1);
+            frm.toggle_display("next", false);
+            frm.set_df_property("next","hidden",1);
+            frm.refresh_field("next");
+        } else {
+            frm.set_value("is_last", 0);
+            frm.toggle_display("next", true);
+            frm.set_df_property("next","hidden",0);
         }
 
-        if (qtype === "Open Ended") {
+    });
 
-            if (!frm.doc.open_ended) {
-                frappe.msgprint("Please enter answer");
-                return;
-            }
-
-            args.open_ended = frm.doc.open_ended;
-        }
-
-        frm.call("next_question", args).then(r => {
-
-            if (!r.message) return;
-
-            // 🔥 THEN clear and load next
-            clear_fields(frm);
-            set_question(frm, r.message);
-        });
-    },
+},
 
     previous(frm) {
 
@@ -71,141 +65,141 @@ frappe.ui.form.on("Student Test Screen", {
 
             if (!r.message) return;
 
-            clear_fields(frm);
             set_question(frm, r.message);
 
-            if (r.message.saved_response) {
+            // Restore after render
+            setTimeout(() => {
 
-                if (r.message.question_type === "Choices") {
+                let saved = r.message.saved_response;
 
-                    if (r.message.saved_response === frm.doc.a)
-                        frm.set_value("is_correct_a", 1);
+                if (!saved) return;
 
-                    if (r.message.saved_response === frm.doc.b)
-                        frm.set_value("is_correct_b", 1);
+                saved = saved.trim();
 
-                    if (r.message.saved_response === frm.doc.c)
-                        frm.set_value("is_correct_c", 1);
+                for (let i = 1; i <= 10; i++) {
 
-                    if (r.message.saved_response === frm.doc.d)
-                        frm.set_value("is_correct_d", 1);
+                    let option_text = frm.doc[`field_${i}`];
+
+                    if (option_text && option_text.trim() === saved) {
+                        frm.set_value(`is_selected_${i}`, 1);
+                        break;
+                    }
                 }
 
-                if (r.message.question_type === "User Input") {
-                    frm.set_value("user_input", r.message.saved_response);
-                }
+                frm.refresh_fields();
 
-                if (r.message.question_type === "Open Ended") {
-                    frm.set_value("open_ended", r.message.saved_response);
-                }
-            }
+            }, 100);
 
-            frm.refresh_fields();
-            
         });
-    }
+    },
+
 
 });
 
 
-function handle_single_select(frm, selected_field) {
-
-    let fields = ["is_correct_a", "is_correct_b", "is_correct_c", "is_correct_d"];
-
-    fields.forEach(f => {
-        if (f !== selected_field) {
-            frm.set_value(f, 0);
-        }
-    });
-}
-
-frappe.ui.form.on("Student Test Screen", {
-
-    is_correct_a(frm) {
-        if (frm.doc.is_correct_a) {
-            handle_single_select(frm, "is_correct_a");
-        }
-    },
-
-    is_correct_b(frm) {
-        if (frm.doc.is_correct_b) {
-            handle_single_select(frm, "is_correct_b");
-        }
-    },
-
-    is_correct_c(frm) {
-        if (frm.doc.is_correct_c) {
-            handle_single_select(frm, "is_correct_c");
-        }
-    },
-
-    is_correct_d(frm) {
-        if (frm.doc.is_correct_d) {
-            handle_single_select(frm, "is_correct_d");
-        }
-    }
-
-});
-
-
+/* =========================
+   LOAD QUESTION
+========================= */
 
 function load_question(frm) {
 
     frm.call("load_question").then(r => {
+        if (!r.message) return;
+
         set_question(frm, r.message);
+
+        if (r.message.is_last) {
+            frm.set_value("is_last", 1);
+            frm.toggle_display("next", false);
+        } else {
+            frm.set_value("is_last", 0);
+            frm.toggle_display("next", true);
+        }
     });
 }
 
 
+
+/* =========================
+   SET QUESTION
+========================= */
+
 function set_question(frm, data) {
+    // 🔹 Clear all first
+    clear_all(frm);
 
-    // 1️⃣ Clear ALL checkboxes FIRST
-    frm.set_value("is_correct_a", 0);
-    frm.set_value("is_correct_b", 0);
-    frm.set_value("is_correct_c", 0);
-    frm.set_value("is_correct_d", 0);
+    // 🔹 Set options dynamically
+    if (data.options) {
 
-    frm.set_value("question_type", data.question_type);
+        data.options.forEach((opt, index) => {
+            
+            let i = index + 1;
+            // frm.set_value(`option_${i}`, opt);
+            
+            // frm.set_value(`is_selected_${i}`, opt);
+            frm.set_value(`field_${i}`, opt);
 
-    // 2️⃣ Set question & options
-    frm.set_value("question", data.question);
-    frm.set_value("a", data.a);
-    frm.set_value("b", data.b);
-    frm.set_value("c", data.c);
-    frm.set_value("d", data.d);
+            // frm.toggle_display(`option_${i}`, true);
+            frm.toggle_display(`field_${i}`, true);
 
-    // 3️⃣ Restore response from child table
-    if (frm.doc.str_test_response) {
-
-        frm.doc.str_test_response.forEach(row => {
-
-            if (row.question === data.question) {
-
-                if (row.response === data.a)
-                    frm.set_value("is_correct_a", 1);
-
-                if (row.response === data.b)
-                    frm.set_value("is_correct_b", 1);
-
-                if (row.response === data.c)
-                    frm.set_value("is_correct_c", 1);
-
-                if (row.response === data.d)
-                    frm.set_value("is_correct_d", 1);
-            }
+            frm.toggle_display(`is_selected_${i}`, true);
         });
     }
 
-    // 🔥 IMPORTANT FIX:
-    // DO NOT hide next button anymore
-    frm.toggle_display("next", true);
+    // 🔹 Hide unused options
+    for (let i = data.options.length + 1; i <= 10; i++) {
+        // frm.toggle_display(`option_${i}`, false);
+        frm.toggle_display(`field_${i}`, false);
+        frm.toggle_display(`is_selected_${i}`, false);
+    }
+
+    frm.set_value("question", data.question);
+    frm.set_value("question_type", data.question_type);
+    frm.set_value("no_of_options", data.no_of_options);
+    frm.set_value("subject", data.subject);
 
     frm.refresh_fields();
 }
 
 
-function clear_fields(frm) {
+/* =========================
+   CLEAR ALL
+========================= */
+
+function clear_all(frm) {
+
+    for (let i = 1; i <= 10; i++) {
+        // frm.set_value(`option_${i}`, "");
+        frm.set_value(`is_selected_${i}`, 0);
+    }
 
     frm.set_value("user_input", "");
     frm.set_value("open_ended", "");
 }
+
+
+/* =========================
+   SINGLE SELECT CHECKBOX CONTROL
+========================= */
+
+frappe.ui.form.on("Student Test Screen", {
+
+    ...Array.from({ length: 10 }, (_, i) => i + 1).reduce((events, i) => {
+
+        events[`is_selected_${i}`] = function(frm) {
+
+            if (frm.doc[`is_selected_${i}`]) {
+
+                for (let j = 1; j <= 10; j++) {
+                    if (j !== i) {
+                        frm.set_value(`is_selected_${j}`, 0);
+                    }
+                }
+            }
+        };
+
+        return events;
+
+    }, {})
+
+});
