@@ -3,125 +3,96 @@ from frappe.model.document import Document
 
 
 class StudentTestScreen(Document):
-
-    # def on_submit(self):
-    #     subject_scores = {}
-
-    #     obtained_score = 0
-    #     total_score = 0
-    #     subject = row.subject or "General"
-
-    #     for row in self.str_test_response:
-    #         obtained_score += row.mark or 0
-    #         total_score += row.maximum_marks or 0
-            
-    #         if subject not in subject_scores:
-    #             subject_scores[subject] = {
-    #                 "obtained": 0,
-    #                 "maximum": 0
-    #             }
-
-    #     subject_scores[subject]["obtained"] += row.mark or 0
-    #     subject_scores[subject]["maximum"] += row.maximum_marks or 0
-
-    #     percentage = 0
-    #     if total_score > 0:
-    #         percentage = (obtained_score / total_score) * 100
-
-    #     submission = frappe.new_doc("Str Psychometric Test Submission")
-    #     submission.member = frappe.session.user
-    #     submission.psychometric_test = self.test_type
-    #     submission.score = obtained_score
-    #     submission.score_out_of = total_score
-    #     submission.percentage = percentage
-    #     submission.passing_percentage = 100
-
-    #     for row in self.str_test_response:
-    #         submission.append("str_test_response", {
-    #             "question": row.question,
-    #             "response": row.response,
-    #             "correct_ans": row.correct_ans,
-    #             "maximum_marks": row.maximum_marks,
-    #             "mark": row.mark,
-    #             "type": row.type
-    #         })
-
-    #     submission.insert(ignore_permissions=True)
-    #     submission.submit()
-
-    #     frappe.msgprint(f"Test Submitted Successfully! Score: {obtained_score}/{total_score}")
     def on_submit(self):
-        subject_scores = {}
 
-        # ----------------------------------------
-        # 1️⃣ Calculate Subject Wise Percentage
-        # ----------------------------------------
+        is_psychometric = False
+
+        # ---------------------------------
+        # 🔎 Detect Test Type
+        # ---------------------------------
         for row in self.str_test_response:
+            question_doc = frappe.get_doc("Str Question", row.question_link)
 
-            subject = row.subject or "General"
+            if question_doc.multiple_correct_answers:
+                is_psychometric = True
+                break
 
-            if subject not in subject_scores:
-                subject_scores[subject] = {
-                    "obtained": 0,
-                    "maximum": 0
-                }
+        # ---------------------------------
+        # ✅ NORMAL MCQ TEST
+        # ---------------------------------
+        if not is_psychometric:
 
-            subject_scores[subject]["obtained"] += row.mark or 0
-            subject_scores[subject]["maximum"] += row.maximum_marks or 0
+            obtained_score = 0
+            total_score = 0
 
-
-
-        subject_percentage_map = {}
-
-        for subject, data in subject_scores.items():
+            for row in self.str_test_response:
+                obtained_score += row.mark or 0
+                total_score += row.maximum_marks or 0
 
             percentage = 0
-            if data["maximum"] > 0:
-                percentage = (data["obtained"] / data["maximum"]) * 100
+            if total_score > 0:
+                percentage = (obtained_score / total_score) * 100
 
-            # Save percentage for formula calculation
-            subject_percentage_map[subject] = percentage
+            frappe.msgprint(f"""
+                <b>Test Result</b><br><br>
+                ✅ Score: {obtained_score}/{total_score}<br>
+                📊 Percentage: {round(percentage, 2)}%
+            """)
 
-        C = subject_percentage_map.get("Conscientiousness", 0)
-        E = subject_percentage_map.get("Extraversion", 0)
-        ES = subject_percentage_map.get("Emotional Stability", 0)
-        O = subject_percentage_map.get("Openness to Experience", 0)
-
-        # ----------------------------------------
-        # 4️⃣ Calculate Orientation Scores
-        # ----------------------------------------
-
-        job_score = (C * 0.4) + (E * 0.2) + (ES * 0.2) + (O * 0.2)
-
-        startup_score = (O * 0.3) + (E * 0.3) + (ES * 0.3) + (C * 0.1)
-
-        higher_ed_score = (O * 0.4) + (C * 0.4) + (ES * 0.1) + (E * 0.1)
-
-        # ----------------------------------------
-        # 5️⃣ Determine Highest Orientation
-        # ----------------------------------------
-
-        highest = max(job_score, startup_score, higher_ed_score)
-
-        if highest == job_score:
-            result = "💼 Job Oriented"
-        elif highest == startup_score:
-            result = "🚀 Startup Oriented"
+        # ---------------------------------
+        # ✅ PSYCHOMETRIC TEST
+        # ---------------------------------
         else:
-            result = "🎓 Higher Education Oriented"
 
-        # ----------------------------------------
-        # 6️⃣ Show Result to Student
-        # ----------------------------------------
+            subject_scores = {}
 
-        frappe.msgprint(f"""
-            <b>Psychometric Result</b><br><br>
-            💼 Job Score: {round(job_score, 2)}<br>
-            🚀 Startup Score: {round(startup_score, 2)}<br>
-            🎓 Higher Education Score: {round(higher_ed_score, 2)}<br><br>
-            <b>Final Result: {result}</b>
-        """)
-        
+            for row in self.str_test_response:
+
+                subject = row.subject or "General"
+
+                if subject not in subject_scores:
+                    subject_scores[subject] = {
+                        "obtained": 0,
+                        "maximum": 0
+                    }
+
+                subject_scores[subject]["obtained"] += row.mark or 0
+                subject_scores[subject]["maximum"] += row.maximum_marks or 0
+
+            subject_percentage_map = {}
+
+            for subject, data in subject_scores.items():
+                percentage = 0
+                if data["maximum"] > 0:
+                    percentage = (data["obtained"] / data["maximum"]) * 100
+
+                subject_percentage_map[subject] = percentage
+
+            C = subject_percentage_map.get("Conscientiousness", 0)
+            E = subject_percentage_map.get("Extraversion", 0)
+            ES = subject_percentage_map.get("Emotional Stability", 0)
+            O = subject_percentage_map.get("Openness to Experience", 0)
+
+            job_score = (C * 0.4) + (E * 0.2) + (ES * 0.2) + (O * 0.2)
+            startup_score = (O * 0.3) + (E * 0.3) + (ES * 0.3) + (C * 0.1)
+            higher_ed_score = (O * 0.4) + (C * 0.4) + (ES * 0.1) + (E * 0.1)
+
+            highest = max(job_score, startup_score, higher_ed_score)
+
+            if highest == job_score:
+                result = "💼 Job Oriented"
+            elif highest == startup_score:
+                result = "🚀 Startup Oriented"
+            else:
+                result = "🎓 Higher Education Oriented"
+
+            frappe.msgprint(f"""
+                <b>Psychometric Result</b><br><br>
+                💼 Job Score: {round(job_score, 2)}<br>
+                🚀 Startup Score: {round(startup_score, 2)}<br>
+                🎓 Higher Education Score: {round(higher_ed_score, 2)}<br><br>
+                <b>Final Result: {result}</b>
+            """)
         
     def before_save(self):
         subject_scores = {}
@@ -138,6 +109,7 @@ class StudentTestScreen(Document):
 
             subject_scores[subject]["obtained"] += row.mark or 0
             subject_scores[subject]["maximum"] += row.maximum_marks or 0
+            
 
 
         submission = []
@@ -173,37 +145,42 @@ class StudentTestScreen(Document):
         question_row = questions[index]
         question_doc = frappe.get_doc("Str Question", question_row.question)
 
-        question_sub = frappe.get_value("Str Psychometric Test Question", {"question_detail": question_doc.question, "parent": self.test_type}, "psychometric_test_subject")
+        # Get subject
+        question_sub = frappe.get_value(
+            "Str Psychometric Test Question",
+            {"question_detail": question_doc.question, "parent": self.test_type},
+            "psychometric_test_subject"
+        )
+
+        # Get options
         options = []
+        for i in range(1, 11):
+            opt = question_doc.get(f"option_{i}")
+            if opt:
+                options.append(opt)
 
-        for i in range(1, 11):  # support max 10 options
-            value = question_doc.get(f"option_{i}")
-            if value:
-                options.append(value)
-                
-        is_last = False
-        total_count = total + 1
-        if self.question_index >= total_count:
-            is_last = True
+        # Get saved response
+        saved_row = next(
+            (d for d in self.str_test_response
+            if str(d.question_link) == str(question_doc.name)),
+            None
+        )
 
-        # ✅ SET FIELD VALUE IN DOC
-        self.is_last = is_last
-        self.save(ignore_permissions=True)
-
+        saved_response = saved_row.response if saved_row else None
 
         return {
             "question": question_doc.question,
             "question_type": question_doc.type,
-            "subject" :question_sub,
+            "subject": question_sub,
             "options": options,
+            "multiple_correct": question_doc.multiple_correct_answers,
             "is_last": (index == total - 1),
             "no_of_options": question_doc.no_of_options,
+            "saved_response": saved_response,
             "completed": False
         }
-
-
-
-
+    
+    
     @frappe.whitelist()
     def next_question(self, selected_option=None, user_input=None, open_ended=None):
 
@@ -302,6 +279,7 @@ class StudentTestScreen(Document):
         question_sub = frappe.get_value("Str Psychometric Test Question", {"question_detail": question_doc.question, "parent": self.test_type}, "psychometric_test_subject")
         # frappe.throw(str(question_sub))
         row.question = question_doc.question
+        row.question_link = question_doc.name
         row.response = response
         row.correct_ans = correct_ans
         row.maximum_marks = max_marks
@@ -331,14 +309,14 @@ class StudentTestScreen(Document):
             if opt:
                 options.append(opt)
                 
-            is_last = False
-        total_count = total + 1
-        if self.question_index >= total_count:
-            is_last = True
+        #     is_last = False
+        # total_count = total + 1
+        # if self.question_index >= total_count:
+        #     is_last = True
 
-        # ✅ SET FIELD VALUE IN DOC
-        self.is_last = is_last
-        self.save(ignore_permissions=True)
+        # # ✅ SET FIELD VALUE IN DOC
+        # self.is_last = is_last
+        # self.save(ignore_permissions=True)
 
         return {
             "question": next_doc.question,

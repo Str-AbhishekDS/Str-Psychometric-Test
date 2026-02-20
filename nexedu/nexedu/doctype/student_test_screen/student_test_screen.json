@@ -40,6 +40,7 @@
   "section_break_qogj",
   "user_input",
   "section_break_tsnc",
+  "column_break_tiho",
   "previous",
   "column_break_sldg",
   "next",
@@ -312,13 +313,18 @@
   {
    "fieldname": "section_break_inrj",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_tiho",
+   "fieldtype": "Column Break",
+   "hidden": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-19 16:13:21.338261",
+ "modified": "2026-02-20 18:51:59.323908",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Student Test Screen",

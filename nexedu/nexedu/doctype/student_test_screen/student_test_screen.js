@@ -44,16 +44,16 @@ next(frm) {
         set_question(frm, r.message);
 
         // ✅ MOVE THIS INSIDE
-        if (r.message.is_last) {
-            frm.set_value("is_last", 1);
-            frm.toggle_display("next", false);
-            frm.set_df_property("next","hidden",1);
-            frm.refresh_field("next");
-        } else {
-            frm.set_value("is_last", 0);
-            frm.toggle_display("next", true);
-            frm.set_df_property("next","hidden",0);
-        }
+        // if (r.message.is_last) {
+        //     frm.set_value("is_last", 1);
+        //     frm.toggle_display("next", false);
+        //     frm.set_df_property("next","hidden",1);
+        //     frm.refresh_field("next");
+        // } else {
+        //     frm.set_value("is_last", 0);
+        //     frm.toggle_display("next", true);
+        //     frm.set_df_property("next","hidden",0);
+        // }
 
     });
 
@@ -108,13 +108,13 @@ function load_question(frm) {
 
         set_question(frm, r.message);
 
-        if (r.message.is_last) {
-            frm.set_value("is_last", 1);
-            frm.toggle_display("next", false);
-        } else {
-            frm.set_value("is_last", 0);
-            frm.toggle_display("next", true);
-        }
+        // if (r.message.is_last) {
+        //     frm.set_value("is_last", 1);
+        //     frm.toggle_display("next", false);
+        // } else {
+        //     frm.set_value("is_last", 0);
+        //     frm.toggle_display("next", true);
+        // }
     });
 }
 
