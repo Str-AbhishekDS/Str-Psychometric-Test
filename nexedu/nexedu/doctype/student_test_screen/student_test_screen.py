@@ -267,7 +267,7 @@ class StudentTestScreen(Document):
 # ----------------------------
 
         existing_row = next(
-            (d for d in self.str_test_response if str(d.question) == str(question_doc.name)),
+            (d for d in self.str_test_response if str(d.question_link) == str(question_doc.name)),
             None
         )
 
@@ -291,32 +291,33 @@ class StudentTestScreen(Document):
         # MOVE TO NEXT QUESTION
         # ----------------------------
 
-        if self.question_index < total - 1:
-            self.question_index += 1
+# ----------------------------
+# MOVE TO NEXT QUESTION
+# ----------------------------
 
+        # Increase index AFTER saving response
+        self.question_index += 1
         self.save(ignore_permissions=True)
 
+        # If all questions completed
         if self.question_index >= total:
             return {"completed": True}
 
+        # Otherwise load next question
         next_row = questions[self.question_index]
         next_doc = frappe.get_doc("Str Question", next_row.question)
 
-        # Dynamic options
         options = []
         for i in range(1, 11):
             opt = next_doc.get(f"option_{i}")
             if opt:
                 options.append(opt)
-                
-        #     is_last = False
-        # total_count = total + 1
-        # if self.question_index >= total_count:
-        #     is_last = True
 
-        # # ✅ SET FIELD VALUE IN DOC
-        # self.is_last = is_last
-        # self.save(ignore_permissions=True)
+        question_sub = frappe.get_value(
+            "Str Psychometric Test Question",
+            {"question_detail": next_doc.question, "parent": self.test_type},
+            "psychometric_test_subject"
+        )
 
         return {
             "question": next_doc.question,
@@ -349,7 +350,7 @@ class StudentTestScreen(Document):
         # Get saved response
         saved_row = None
         for d in self.str_test_response:
-            if d.question == question_doc.name:
+            if d.question_link == question_doc.name:
                 saved_row = d
                 break
 
@@ -392,3 +393,4 @@ def get_correct_answer(doc):
         return doc.option_4
 
     return None
+
