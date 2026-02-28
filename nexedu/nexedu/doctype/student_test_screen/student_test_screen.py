@@ -1,5 +1,6 @@
 import frappe
 from frappe.model.document import Document
+from nexedu.api.psychometric_ai import generate_personality
 
 
 class StudentTestScreen(Document):
@@ -7,9 +8,6 @@ class StudentTestScreen(Document):
 
         is_psychometric = False
 
-        # ---------------------------------
-        # 🔎 Detect Test Type
-        # ---------------------------------
         for row in self.str_test_response:
             question_doc = frappe.get_doc("Str Question", row.question_link)
 
@@ -17,9 +15,6 @@ class StudentTestScreen(Document):
                 is_psychometric = True
                 break
 
-        # ---------------------------------
-        # ✅ NORMAL MCQ TEST
-        # ---------------------------------
         if not is_psychometric:
 
             obtained_score = 0
@@ -39,10 +34,12 @@ class StudentTestScreen(Document):
                 📊 Percentage: {round(percentage, 2)}%
             """)
 
-        # ---------------------------------
-        # ✅ PSYCHOMETRIC TEST
-        # ---------------------------------
         else:
+
+            frappe.enqueue(
+                "nexedu.api.psychometric_ai.generate_personality",
+                docname=self.name
+            )
 
             subject_scores = {}
 
@@ -93,6 +90,7 @@ class StudentTestScreen(Document):
                 🎓 Higher Education Score: {round(higher_ed_score, 2)}<br><br>
                 <b>Final Result: {result}</b>
             """)
+
         
     def before_save(self):
         subject_scores = {}
@@ -202,9 +200,7 @@ class StudentTestScreen(Document):
         max_marks = question_row.marks or 0
         mark = 0
 
-        # ----------------------------
-        # MCQ TYPE
-        # ----------------------------
+
         if question_type == "Choices":
 
             # 🔹 SINGLE CORRECT
@@ -236,9 +232,7 @@ class StudentTestScreen(Document):
                     if opt and is_correct and selected_option and opt in selected_option:
                         mark = weight
 
-        # ----------------------------
-        # USER INPUT
-        # ----------------------------
+
         elif question_type == "User Input":
 
             response = user_input
@@ -248,9 +242,7 @@ class StudentTestScreen(Document):
                 if response.strip().lower() == correct_ans.strip().lower():
                     mark = max_marks
 
-        # ----------------------------
-        # OPEN ENDED
-        # ----------------------------
+
         elif question_type == "Open Ended":
 
             response = open_ended
@@ -258,13 +250,6 @@ class StudentTestScreen(Document):
             mark = 0
             max_marks = 0
 
-        # ----------------------------
-        # SAVE RESPONSE (Child Table)
-        # ----------------------------
-
-# ----------------------------
-# SAVE RESPONSE (Child Table)
-# ----------------------------
 
         existing_row = next(
             (d for d in self.str_test_response if str(d.question_link) == str(question_doc.name)),
@@ -287,13 +272,6 @@ class StudentTestScreen(Document):
         row.subject = question_sub
         row.type = question_type
 
-        # ----------------------------
-        # MOVE TO NEXT QUESTION
-        # ----------------------------
-
-# ----------------------------
-# MOVE TO NEXT QUESTION
-# ----------------------------
 
         # Increase index AFTER saving response
         self.question_index += 1

@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:title",
  "creation": "2026-02-09 12:00:13.069427",
@@ -163,7 +164,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 16:13:21.791428",
+ "modified": "2026-02-27 15:00:42.226701",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Str Psychometric Test",

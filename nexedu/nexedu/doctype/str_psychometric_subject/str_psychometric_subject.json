@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "field:subject_name",
  "creation": "2026-02-07 14:54:27.256328",
  "doctype": "DocType",
@@ -52,7 +53,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 16:13:22.360982",
+ "modified": "2026-02-27 14:55:05.102482",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Str Psychometric Subject",
