@@ -1,5 +1,6 @@
 import frappe
 import requests
+import time
 
 
 @frappe.whitelist()
@@ -19,40 +20,47 @@ def generate_personality(docname):
     dominant_trait = max(subject_scores, key=subject_scores.get)
 
     prompt = f"""
-        The student's dominant personality trait is {dominant_trait}.
+Dominant Trait: {dominant_trait}
 
-        Write a professional personality report using this exact structure.
+Write only this format:
 
-        Personality: {dominant_trait}
+Personality: {dominant_trait}
 
-        Reason:
-        Write 2 to 3 short lines explaining this personality clearly.
+Reason:
+Explain in 2 short lines how this personality appears in a student's academic behavior.
 
-        Strengths:
-        Write exactly 4 short bullet points.
+Strengths:
+- 4 short strengths specifically useful for a student
 
-        Recommendations:
-        Write exactly 4 short bullet points.
-
-        Do not repeat these instructions.
-        Do not include brackets.
-        Do not include example text.
-        Do not leave placeholders.
-        Start directly from 'Personality:'.
-        """
+Keep total under 100 words.
+No introduction.
+No conclusion.
+Stop after Strengths.
+"""
 
     result = "AI could not generate result."
 
     try:
+        # ⏱ START TIMER
+        start_time = time.time()
+
         response = requests.post(
-            "http://127.0.0.1:11434/api/generate",
+            "http://192.168.1.70:11434/api/generate",
             json={
-                "model": "tinyllama",
+                "model": "qwen2.5:3b",
                 "prompt": prompt,
-                "stream": False
+                "stream": False,
+                "temperature": 0.2,
+                "num_predict": 150
             },
             timeout=120
         )
+
+        # ⏱ END TIMER
+        end_time = time.time()
+        response_time = round(end_time - start_time, 2)
+
+        frappe.log_error(f"\n🧠 AI Response Time: {response_time} seconds\n")
 
         if response.status_code != 200:
             result = f"AI Server Error: {response.text}"
@@ -63,58 +71,9 @@ def generate_personality(docname):
     except requests.exceptions.Timeout:
         result = "AI Timeout: Model took too long to respond."
 
-    except requests.exceptions.ConnectionError:
-        result = "AI Connection Error: Ollama server not reachable."
-
     except Exception as e:
         result = f"Unexpected AI Error: {str(e)}"
-
-    result = clean_ai_output(result, dominant_trait)
 
     doc.db_set("ai_result", result)
 
     return result
-
-
-
-def clean_ai_output(text, dominant_trait):
-
-    if not text:
-        return "AI returned empty response."
-
-    unwanted_phrases = [
-        "Sure thing",
-        "Here's an example",
-        "Keep the output under",
-        "Do NOT",
-        "Note:",
-        "In conclusion",
-        "This personal opinion"
-    ]
-
-    for phrase in unwanted_phrases:
-        text = text.replace(phrase, "")
-
-    if "Personality:" in text:
-        text = text[text.index("Personality:"):]
-
-    if "Personality:" not in text:
-        text = f"""Personality: {dominant_trait}
-
-Reason:
-This personality reflects the student's dominant psychometric trait.
-
-Strengths:
-- Self-aware
-- Capable of growth
-- Adaptable
-- Motivated
-
-Recommendations:
-- Focus on skill development
-- Seek mentorship
-- Set clear goals
-- Pursue suitable career paths
-"""
-
-    return text.strip()
