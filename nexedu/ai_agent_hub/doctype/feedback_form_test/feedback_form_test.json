@@ -1,0 +1,147 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{####}",
+ "creation": "2026-03-04 14:46:51.810607",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_ycmf",
+  "feedback_form",
+  "section_break_lwka",
+  "question",
+  "question_type",
+  "section_break_qabt",
+  "response",
+  "section_break_dsvz",
+  "rate",
+  "section_break_sqwo",
+  "answer",
+  "section_break_abdc",
+  "next",
+  "section_break_bmrx",
+  "amended_from",
+  "feedback_answer"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_ycmf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "feedback_form",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Feedback Form",
+   "options": "Feedback Form",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_lwka",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Data",
+   "label": "Question"
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Select",
+   "label": "Answer",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.question_type == \"Text\"",
+   "fieldname": "section_break_qabt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.question_type == \"Rating (1-5)\"",
+   "fieldname": "section_break_dsvz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Int",
+   "label": "Rate",
+   "placeholder": "1 - 5"
+  },
+  {
+   "depends_on": "eval:doc.question_type == \"Yes/No\"",
+   "fieldname": "section_break_sqwo",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "response",
+   "fieldtype": "Data",
+   "label": "Response"
+  },
+  {
+   "fieldname": "question_type",
+   "fieldtype": "Select",
+   "label": "Question Type",
+   "options": "\nRating (1-5)\nYes/No\nText"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Feedback Form Test",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_bmrx",
+   "fieldtype": "Section Break",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_abdc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "next",
+   "fieldtype": "Button",
+   "label": "Next"
+  },
+  {
+   "fieldname": "feedback_answer",
+   "fieldtype": "Table",
+   "label": "Feedback Answer",
+   "options": "Feedback Answer"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-03-04 16:58:03.714040",
+ "modified_by": "Administrator",
+ "module": "AI Agent Hub",
+ "name": "Feedback Form Test",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
