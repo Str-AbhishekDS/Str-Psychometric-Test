@@ -6,10 +6,6 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
         single_column: true
     });
 
-    // -----------------------------
-    // Filters
-    // -----------------------------
-
     let module_field = page.add_field({
         label: "Module",
         fieldtype: "Select",
@@ -20,7 +16,7 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
             "Mentor",
             "Industry",
             "College",
-            "Psychometric",
+            "Psychometric Test",
             "Onboarding"
         ],
         change() {
@@ -46,9 +42,6 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
         }
     });
 
-    // -----------------------------
-    // Buttons
-    // -----------------------------
 
     page.add_inner_button("Clear Filters", () => {
 
@@ -100,9 +93,6 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
     });
 
 
-    // -----------------------------
-    // Chart Container
-    // -----------------------------
 
     $(wrapper).append(`
         <div style="padding:20px; max-width:1100px; margin:auto">
@@ -146,15 +136,10 @@ function format_ai(text){
 }
 
 
-/* =======================================================
-   Load Feedback Data
-======================================================= */
-
 function load_feedback_data(page){
 
     let module = page.fields_dict.module.get_value();
 
-    // If module not selected → show nothing
     if(!module){
         clear_chart();
         return;
@@ -183,11 +168,6 @@ function load_feedback_data(page){
 
 }
 
-
-
-/* =======================================================
-   Render Chart
-======================================================= */
 
 function render_charts(data){
 
@@ -271,9 +251,22 @@ function render_charts(data){
             plugins: {
 
                 legend: {
-                    position: "top"
-                },
+                    position: "top",
+                    labels: {
 
+                        filter: function(legendItem){
+
+                            const label = legendItem.text.toLowerCase();
+
+                            if(label === "yes" || label === "no" || label === "rating"){
+                                return true;
+                            }
+
+                            return false;
+                        }
+
+                    }
+                },
                 tooltip: {
 
                     callbacks: {
@@ -323,11 +316,6 @@ function render_charts(data){
 }
 
 
-
-/* =======================================================
-   Clear Chart
-======================================================= */
-
 function clear_chart(){
 
     if (window.feedback_chart && typeof window.feedback_chart.destroy === "function") {
@@ -337,34 +325,24 @@ function clear_chart(){
 }
 
 
-
-/* =======================================================
-   Color Logic
-======================================================= */
-
 function get_color(answer){
 
-    const map = {
+    answer = String(answer).toLowerCase().trim();
 
-        "Yes": "#4CAF50",
-        "No": "#F44336",
+    if(answer === "yes"){
+        return "#4CAF50";
+    }
 
-        "1": "#FF6B6B",
-        "2": "#FFA726",
-        "3": "#FFC107",
-        "4": "#42A5F5",
-        "5": "#1E88E5"
+    if(answer === "no"){
+        return "#F44336";
+    }
 
-    };
-
-    if(map[answer]){
-        return map[answer];
+    if(answer === "rating"){
+        return "#2196F3";
     }
 
     return random_color();
-
 }
-
 
 
 function random_color(){

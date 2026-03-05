@@ -22,8 +22,8 @@
   "section_break_abdc",
   "next",
   "section_break_bmrx",
-  "amended_from",
-  "feedback_answer"
+  "feedback_answer",
+  "amended_from"
  ],
  "fields": [
   {
@@ -45,7 +45,8 @@
   {
    "fieldname": "question",
    "fieldtype": "Data",
-   "label": "Question"
+   "label": "Question",
+   "read_only": 1
   },
   {
    "fieldname": "answer",
@@ -83,7 +84,8 @@
    "fieldname": "question_type",
    "fieldtype": "Select",
    "label": "Question Type",
-   "options": "\nRating (1-5)\nYes/No\nText"
+   "options": "\nRating (1-5)\nYes/No\nText",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -113,7 +115,8 @@
    "fieldname": "feedback_answer",
    "fieldtype": "Table",
    "label": "Feedback Answer",
-   "options": "Feedback Answer"
+   "options": "Feedback Answer",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_pojo",
@@ -131,7 +134,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-04 18:28:26.996668",
+ "modified": "2026-03-05 15:57:26.941170",
  "modified_by": "Administrator",
  "module": "AI Agent Hub",
  "name": "Feedback Form Test",

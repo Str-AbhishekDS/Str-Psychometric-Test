@@ -41,7 +41,6 @@ Stop after Strengths.
     result = "AI could not generate result."
 
     try:
-        # ⏱ START TIMER
         start_time = time.time()
 
         response = requests.post(
@@ -56,7 +55,6 @@ Stop after Strengths.
             timeout=120
         )
 
-        # ⏱ END TIMER
         end_time = time.time()
         response_time = round(end_time - start_time, 2)
 
