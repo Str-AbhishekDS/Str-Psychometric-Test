@@ -8,6 +8,8 @@
  "field_order": [
   "section_break_ycmf",
   "feedback_form",
+  "column_break_pojo",
+  "date",
   "section_break_lwka",
   "question",
   "question_type",
@@ -112,13 +114,24 @@
    "fieldtype": "Table",
    "label": "Feedback Answer",
    "options": "Feedback Answer"
+  },
+  {
+   "fieldname": "column_break_pojo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-04 16:58:03.714040",
+ "modified": "2026-03-04 18:28:26.996668",
  "modified_by": "Administrator",
  "module": "AI Agent Hub",
  "name": "Feedback Form Test",

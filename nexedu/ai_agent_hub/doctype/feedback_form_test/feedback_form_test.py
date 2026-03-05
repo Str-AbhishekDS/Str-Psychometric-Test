@@ -14,6 +14,7 @@ class FeedbackFormTest(Document):
         doc.feedback_test = self.name
         doc.feedback_form = self.feedback_form
         doc.user = frappe.session.user
+        doc.submitted_date = self.date
         doc.module_type = module_type
 
         for response in self.feedback_answer:
