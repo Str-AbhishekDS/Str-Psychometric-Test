@@ -6,7 +6,7 @@ frappe.ui.form.on("Student Test Screen", {
         }
     },
 
-    test_type(frm) {
+    test(frm) {
         frm.set_value("question_index", 0);
         frm.save().then(() => {
             load_question(frm);
@@ -40,20 +40,32 @@ next(frm) {
 
         if (!r.message) return;
 
+        // ✅ If test completed
+        if (r.message.completed) {
+
+            frappe.msgprint("✅ Test Completed Successfully");
+
+            // Clear screen
+            clear_all(frm);
+
+            frm.set_value("question", "");
+            frm.set_value("question_type", "");
+            frm.set_value("subject", "");
+
+            // Hide all options
+            for (let i = 1; i <= 10; i++) {
+                frm.toggle_display(`field_${i}`, false);
+                frm.toggle_display(`is_selected_${i}`, false);
+            }
+
+            frm.refresh_fields();
+
+            return; // ❗ Stop loading question again
+        }
+
+        // Normal flow
         clear_all(frm);
         set_question(frm, r.message);
-
-        // ✅ MOVE THIS INSIDE
-        if (r.message.is_last) {
-            frm.set_value("is_last", 1);
-            frm.toggle_display("next", false);
-            frm.set_df_property("next","hidden",1);
-            frm.refresh_field("next");
-        } else {
-            frm.set_value("is_last", 0);
-            frm.toggle_display("next", true);
-            frm.set_df_property("next","hidden",0);
-        }
 
     });
 
@@ -82,7 +94,8 @@ next(frm) {
 
                     if (option_text && option_text.trim() === saved) {
                         frm.set_value(`is_selected_${i}`, 1);
-                        break;
+                    } else {
+                        frm.set_value(`is_selected_${i}`, 0);
                     }
                 }
 
@@ -108,13 +121,13 @@ function load_question(frm) {
 
         set_question(frm, r.message);
 
-        if (r.message.is_last) {
-            frm.set_value("is_last", 1);
-            frm.toggle_display("next", false);
-        } else {
-            frm.set_value("is_last", 0);
-            frm.toggle_display("next", true);
-        }
+        // if (r.message.is_last) {
+        //     frm.set_value("is_last", 1);
+        //     frm.toggle_display("next", false);
+        // } else {
+        //     frm.set_value("is_last", 0);
+        //     frm.toggle_display("next", true);
+        // }
     });
 }
 
@@ -126,7 +139,7 @@ function load_question(frm) {
 
 function set_question(frm, data) {
     // 🔹 Clear all first
-    clear_all(frm);
+    // clear_all(frm);
 
     // 🔹 Set options dynamically
     if (data.options) {
