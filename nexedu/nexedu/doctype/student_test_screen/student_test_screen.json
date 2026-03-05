@@ -7,7 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "section_break_ocdb",
-  "test_type",
+  "test",
   "subject",
   "column_break_xxuf",
   "question_type",
@@ -69,14 +69,6 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "fieldname": "test_type",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Test Type",
-   "options": "Str Psychometric Test",
-   "reqd": 1
   },
   {
    "fieldname": "section_break_zfqc",
@@ -318,13 +310,21 @@
    "fieldname": "column_break_tiho",
    "fieldtype": "Column Break",
    "hidden": 1
+  },
+  {
+   "fieldname": "test",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Test ",
+   "options": "Str Psychometric Test",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-20 18:51:59.323908",
+ "modified": "2026-03-05 13:55:04.261093",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Student Test Screen",
