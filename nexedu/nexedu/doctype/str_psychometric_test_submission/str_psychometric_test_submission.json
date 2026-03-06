@@ -7,9 +7,10 @@
  "engine": "InnoDB",
  "field_order": [
   "psychometric_test",
-  "course",
+  "psychometric_test_type",
   "column_break_3",
   "member",
+  "student_test_screen",
   "section_break_dkpn",
   "score",
   "score_out_of",
@@ -20,14 +21,6 @@
   "str_test_response"
  ],
  "fields": [
-  {
-   "fetch_from": "quiz.course",
-   "fieldname": "course",
-   "fieldtype": "Link",
-   "label": "Psychometric Test Type",
-   "options": "Str Psychometric Test-Type",
-   "read_only": 1
-  },
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
@@ -96,12 +89,26 @@
    "fieldtype": "Table",
    "label": "Str Test Response",
    "options": "Str Test Response"
+  },
+  {
+   "fieldname": "student_test_screen",
+   "fieldtype": "Link",
+   "label": "Student Test Screen",
+   "options": "Student Test Screen"
+  },
+  {
+   "fetch_from": "quiz.course",
+   "fieldname": "psychometric_test_type",
+   "fieldtype": "Link",
+   "label": "Psychometric Test Type",
+   "options": "Str Psychometric Test-Type",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 16:13:21.964681",
+ "modified": "2026-03-06 11:05:21.296413",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Str Psychometric Test Submission",

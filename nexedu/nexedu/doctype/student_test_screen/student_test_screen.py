@@ -6,6 +6,10 @@ class StudentTestScreen(Document):
     def on_submit(self):
 
         is_psychometric = False
+        # IMPORTANT: define variables here
+        obtained_score = 0
+        total_score = 0
+        percentage = 0
 
         # ---------------------------------
         # 🔎 Detect Test Type
@@ -22,14 +26,10 @@ class StudentTestScreen(Document):
         # ---------------------------------
         if not is_psychometric:
 
-            obtained_score = 0
-            total_score = 0
-
             for row in self.str_test_response:
                 obtained_score += row.mark or 0
                 total_score += row.maximum_marks or 0
 
-            percentage = 0
             if total_score > 0:
                 percentage = (obtained_score / total_score) * 100
 
@@ -93,6 +93,40 @@ class StudentTestScreen(Document):
                 🎓 Higher Education Score: {round(higher_ed_score, 2)}<br><br>
                 <b>Final Result: {result}</b>
             """)
+
+
+        psychometric_test_type = frappe.db.get_value(
+            "Str Psychometric Test",
+            self.test,
+            "psychometric_test_type"
+        )
+
+
+        doc = frappe.new_doc("Str Psychometric Test Submission")
+
+        doc.student_test_screen = self.name
+        doc.psychometric_test = self.test
+        doc.psychometric_test_type = psychometric_test_type
+        doc.member = frappe.session.user
+        doc.score = obtained_score
+        doc.score_out_of = total_score
+        doc.percentage = percentage
+        doc.passing_percentage = 50
+
+        for values in self.str_test_response:
+
+            doc.append("str_test_response", {
+                "question": values.question,
+                "question_link": values.question_link,
+                "response": values.response,
+                "correct_ans": values.correct_ans,
+                "mark": values.mark,
+                "maximum_marks": values.maximum_marks,
+                "type": values.type,
+                "subject": values.subject
+            })
+
+        doc.insert(ignore_permissions=True)
         
     def before_save(self):
         subject_scores = {}
@@ -171,7 +205,7 @@ class StudentTestScreen(Document):
         return {
             "question": question_doc.question,
             "question_type": question_doc.type,
-            "subject": question_sub,
+            "subject": question_sub or "General",
             "options": options,
             "multiple_correct": question_doc.multiple_correct_answers,
             "is_last": (index == total - 1),
@@ -330,7 +364,7 @@ class StudentTestScreen(Document):
             "options": options,
             "multiple_correct": next_doc.multiple_correct_answers,
             "is_last": (self.question_index == total - 1),
-            "subject": question_sub,
+            "subject": question_sub or "General",
             "completed": False
         }
 
