@@ -9,10 +9,11 @@
   "section_break_97mm",
   "feedback_form",
   "module_type",
-  "submitted_date",
+  "doctype_name",
   "column_break_mzqj",
   "feedback_test",
   "user",
+  "submitted_date",
   "section_break_dfpk",
   "feedback_answers",
   "amended_from"
@@ -38,10 +39,11 @@
   },
   {
    "fieldname": "module_type",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Module Type"
+   "label": "Module Type",
+   "options": "Module Def"
   },
   {
    "fieldname": "amended_from",
@@ -77,13 +79,19 @@
    "fieldname": "submitted_date",
    "fieldtype": "Date",
    "label": "Submitted Date"
+  },
+  {
+   "fieldname": "doctype_name",
+   "fieldtype": "Link",
+   "label": "Doctype Name",
+   "options": "DocType"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-05 15:33:49.579104",
+ "modified": "2026-03-09 14:54:26.474595",
  "modified_by": "Administrator",
  "module": "AI Agent Hub",
  "name": "Feedback Response",

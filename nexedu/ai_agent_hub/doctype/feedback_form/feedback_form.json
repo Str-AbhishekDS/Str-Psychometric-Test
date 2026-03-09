@@ -11,6 +11,7 @@
   "is_active",
   "column_break_hgdh",
   "module_type",
+  "doctype_name",
   "section_break_cijk",
   "feedback_question"
  ],
@@ -29,10 +30,10 @@
   },
   {
    "fieldname": "module_type",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Module Type",
-   "options": "\nStudent\nMentor\nIndustry\nCollege\nPsychometric Test\nOnboarding",
+   "options": "Module Def",
    "reqd": 1
   },
   {
@@ -56,14 +57,20 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Is Active",
-   "read_only": 1
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "doctype_name",
+   "fieldtype": "Link",
+   "label": "Doctype Name",
+   "options": "DocType",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-05 17:01:37.682756",
+ "modified": "2026-03-09 14:52:32.864878",
  "modified_by": "Administrator",
  "module": "AI Agent Hub",
  "name": "Feedback Form",

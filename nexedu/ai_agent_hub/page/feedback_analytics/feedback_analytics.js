@@ -6,19 +6,43 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
         single_column: true
     });
 
+    /* ---------------- Filters ---------------- */
+
     let module_field = page.add_field({
         label: "Module",
-        fieldtype: "Select",
+        fieldtype: "Link",
+        options: "Module Def",
         fieldname: "module",
-        options: [
-            "",
-            "Student",
-            "Mentor",
-            "Industry",
-            "College",
-            "Psychometric Test",
-            "Onboarding"
-        ],
+        change() {
+            load_feedback_data(page);
+        }
+    });
+
+    let doctype_field = page.add_field({
+        label: "DocType",
+        fieldtype: "Link",
+        options: "DocType",
+        fieldname: "doctype_name",
+        change() {
+            load_feedback_data(page);
+        }
+    });
+
+    let form_field = page.add_field({
+        label: "Feedback Form",
+        fieldtype: "Link",
+        options: "Feedback Form",
+        fieldname: "feedback_form",
+        change() {
+            load_feedback_data(page);
+        }
+    });
+
+    let user_field = page.add_field({
+        label: "User",
+        fieldtype: "Link",
+        options: "User",
+        fieldname: "user",
         change() {
             load_feedback_data(page);
         }
@@ -43,9 +67,14 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
     });
 
 
+    /* ---------------- Buttons ---------------- */
+
     page.add_inner_button("Clear Filters", () => {
 
         module_field.set_value("");
+        doctype_field.set_value("");
+        form_field.set_value("");
+        user_field.set_value("");
         from_date.set_value("");
         to_date.set_value("");
 
@@ -58,12 +87,12 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
 
     page.add_inner_button("Fetch AI Feedback", () => {
 
-        let module = page.fields_dict.module.get_value();
+        let module = module_field.get_value();
 
-        if(!module){
-            frappe.msgprint("Please select module first.");
-            return;
-        }
+        // if(!module){
+        //     frappe.msgprint("Please select module first.");
+        //     return;
+        // }
 
         frappe.call({
 
@@ -71,8 +100,11 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
 
             args:{
                 module: module,
-                from_date: page.fields_dict.from_date.get_value(),
-                to_date: page.fields_dict.to_date.get_value()
+                doctype_name: doctype_field.get_value(),
+                feedback_form: form_field.get_value(),
+                user: user_field.get_value(),
+                from_date: from_date.get_value(),
+                to_date: to_date.get_value()
             },
 
             freeze:true,
@@ -93,6 +125,7 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
     });
 
 
+    /* ---------------- Chart Area ---------------- */
 
     $(wrapper).append(`
         <div style="padding:20px; max-width:1100px; margin:auto">
@@ -100,8 +133,8 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
         </div>
 
         <div id="ai_feedback_box"
-        style="display:none; margin-top:20px; padding:20px; border:1px solid #ddd;
-        border-radius:8px; background:#f9f9f9; max-width:1100px; margin:auto">
+        style="display:none;margin-top:20px;padding:20px;border:1px solid #ddd;
+        border-radius:8px;background:#f9f9f9;max-width:1100px;margin:auto">
 
             <h4>AI Feedback Summary</h4>
 
@@ -112,6 +145,8 @@ frappe.pages['feedback-analytics'].on_page_load = function(wrapper) {
 
 };
 
+
+/* ================= AI TEXT FORMAT ================= */
 
 function format_ai(text){
 
@@ -136,27 +171,26 @@ function format_ai(text){
 }
 
 
+/* ================= LOAD DATA ================= */
+
 function load_feedback_data(page){
 
-    let module = page.fields_dict.module.get_value();
-
-    if(!module){
-        clear_chart();
-        return;
-    }
-
     frappe.call({
+
         method: "nexedu.api.feedback.get_module_feedback_analytics",
 
-        args: {
-            module: module,
+        args:{
+            module: page.fields_dict.module.get_value(),
+            doctype_name: page.fields_dict.doctype_name?.get_value(),
+            feedback_form: page.fields_dict.feedback_form?.get_value(),
+            user: page.fields_dict.user?.get_value(),
             from_date: page.fields_dict.from_date.get_value(),
             to_date: page.fields_dict.to_date.get_value()
         },
 
-        callback: function(r){
+        callback:function(r){
 
-            if(!r.message){
+            if(!r.message || r.message.length === 0){
                 clear_chart();
                 return;
             }
@@ -164,12 +198,21 @@ function load_feedback_data(page){
             render_charts(r.message);
 
         }
+
     });
 
 }
 
 
+/* ================= RENDER CHART ================= */
+
 function render_charts(data){
+
+
+    if(!data || data.length === 0){
+        clear_chart();
+        return;
+    }
 
     if(typeof Chart === "undefined"){
         console.error("ChartJS not loaded");
@@ -230,9 +273,7 @@ function render_charts(data){
 
     clear_chart();
 
-
-    const ctx = document.getElementById("feedback_chart");
-
+    const ctx = document.getElementById("feedback_chart").getContext("2d");
 
     window.feedback_chart = new Chart(ctx, {
 
@@ -251,22 +292,9 @@ function render_charts(data){
             plugins: {
 
                 legend: {
-                    position: "top",
-                    labels: {
-
-                        filter: function(legendItem){
-
-                            const label = legendItem.text.toLowerCase();
-
-                            if(label === "yes" || label === "no" || label === "rating"){
-                                return true;
-                            }
-
-                            return false;
-                        }
-
-                    }
+                    position: "top"
                 },
+
                 tooltip: {
 
                     callbacks: {
@@ -292,19 +320,15 @@ function render_charts(data){
 
             scales: {
 
-                x: {
-                    stacked: true
-                },
+                x: { stacked: true },
 
                 y: {
                     stacked: true,
                     max: 100,
-
-                    ticks: {
-                        stepSize: 20,
+                    ticks:{
+                        stepSize:20,
                         callback: value => value + "%"
                     }
-
                 }
 
             }
@@ -316,38 +340,46 @@ function render_charts(data){
 }
 
 
+/* ================= CLEAR CHART ================= */
+
 function clear_chart(){
 
-    if (window.feedback_chart && typeof window.feedback_chart.destroy === "function") {
-        window.feedback_chart.destroy();
+    try{
+
+        if(window.feedback_chart){
+
+            if(typeof window.feedback_chart.destroy === "function"){
+                window.feedback_chart.destroy();
+            }
+
+            window.feedback_chart = null;
+        }
+
+    }catch(e){
+        console.warn("Chart destroy skipped", e);
+        window.feedback_chart = null;
     }
 
 }
 
+/* ================= COLORS ================= */
 
 function get_color(answer){
 
     answer = String(answer).toLowerCase().trim();
 
-    if(answer === "yes"){
-        return "#4CAF50";
-    }
-
-    if(answer === "no"){
-        return "#F44336";
-    }
-
-    if(answer === "rating"){
-        return "#2196F3";
-    }
+    if(answer === "yes") return "#4CAF50";
+    if(answer === "no") return "#F44336";
+    if(answer === "rating") return "#2196F3";
 
     return random_color();
+
 }
 
 
 function random_color(){
 
-    const colors = [
+    const colors=[
         "#5E64FF",
         "#9C27B0",
         "#03A9F4",

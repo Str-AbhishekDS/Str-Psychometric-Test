@@ -2,15 +2,28 @@ import frappe
 import requests
 import json
 
+
 @frappe.whitelist()
-def get_module_feedback_analytics(module=None, from_date=None, to_date=None):
+def get_module_feedback_analytics(module=None, doctype_name=None, feedback_form=None, user=None, from_date=None, to_date=None):
 
     conditions = []
     values = []
 
     if module:
-        conditions.append("fr.module_type = %s")
+        conditions.append("fr.module_type=%s")
         values.append(module)
+
+    if doctype_name:
+        conditions.append("fr.doctype_name=%s")
+        values.append(doctype_name)
+
+    if feedback_form:
+        conditions.append("fr.feedback_form=%s")
+        values.append(feedback_form)
+
+    if user:
+        conditions.append("fr.user=%s")
+        values.append(user)
 
     if from_date:
         conditions.append("fr.submitted_date >= %s")
@@ -20,100 +33,108 @@ def get_module_feedback_analytics(module=None, from_date=None, to_date=None):
         conditions.append("fr.submitted_date <= %s")
         values.append(to_date)
 
-    conditions.append("fa.question IS NOT NULL")
+    where_clause = ""
 
-    where_clause = "WHERE " + " AND ".join(conditions)
+    if conditions:
+        where_clause = "WHERE " + " AND ".join(conditions)
 
-    questions = frappe.db.sql(f"""
-        SELECT 
+
+    rows = frappe.db.sql(f"""
+        SELECT
             fa.question,
-            fa.idx
+            fa.idx,
+            fa.answer
         FROM `tabFeedback Answer` fa
         JOIN `tabFeedback Response` fr
         ON fa.parent = fr.name
         {where_clause}
-        GROUP BY fa.idx
         ORDER BY fa.idx
     """, values, as_dict=True)
 
+
+    if not rows:
+        return []
+
+
+    questions = {}
+
+    for r in rows:
+
+        q = r.question
+
+        if q not in questions:
+            questions[q] = []
+
+        questions[q].append(r.answer)
+
+
     result = []
 
-    for q in questions:
+    for q, answers in questions.items():
 
-        responses = frappe.db.sql(f"""
-            SELECT 
-                fa.answer,
-                COUNT(*) as total
-            FROM `tabFeedback Answer` fa
-            JOIN `tabFeedback Response` fr
-                ON fa.parent = fr.name
-            WHERE fa.idx = %s
-            AND fa.answer IS NOT NULL
-            AND fa.answer != ''
-            {"AND fr.module_type = %s" if module else ""}
-            {"AND fr.submitted_date >= %s" if from_date else ""}
-            {"AND fr.submitted_date <= %s" if to_date else ""}
-            GROUP BY fa.answer
-        """, [q.idx] + ([module] if module else []) + ([from_date] if from_date else []) + ([to_date] if to_date else []), as_dict=True)
+        rating_values = [
+            int(a) for a in answers
+            if str(a).isdigit() and 1 <= int(a) <= 5
+        ]
 
-        answers = [r.answer for r in responses]
 
-        # Detect rating question
-        rating_values = [int(a) for a in answers if str(a).isdigit() and 1 <= int(a) <= 5]
-
+        # Rating type
         if rating_values:
 
             avg_rating = sum(rating_values) / len(rating_values)
-            percent = round((avg_rating / 5) * 100, 2)
 
             result.append({
-                "question": q.question,
+                "question": q,
                 "type": "rating",
-                "distribution": [
-                    {
-                        "answer": "Rating",
-                        "percent": percent
-                    }
-                ]
+                "distribution": [{
+                    "answer": "Rating",
+                    "percent": round((avg_rating / 5) * 100, 2)
+                }]
             })
 
             continue
 
-        # yes/no or text
+
+        # Yes/No/Text
         counts = {}
 
-        for ans in answers:
-            counts[ans] = counts.get(ans, 0) + 1
+        for a in answers:
+            counts[a] = counts.get(a, 0) + 1
 
         total = len(answers)
 
-        data = []
+        dist = []
 
-        for ans, count in counts.items():
-
-            percent = round((count / total) * 100, 2)
-
-            data.append({
-                "answer": ans,
-                "percent": percent
+        for k, v in counts.items():
+            dist.append({
+                "answer": k,
+                "percent": round((v / total) * 100, 2)
             })
 
         result.append({
-            "question": q.question,
+            "question": q,
             "type": "other",
-            "distribution": data
+            "distribution": dist
         })
+
 
     return result
 
 
 @frappe.whitelist()
-def generate_ai_feedback(module=None, from_date=None, to_date=None):
+def generate_ai_feedback(module=None, from_date=None, to_date=None, doctype_name=None, feedback_form=None, user=None):
 
-    if not module:
-        frappe.throw("Please select module first.")
+    # if not module:
+    #     frappe.throw("Please select module first.")
 
-    analytics = get_module_feedback_analytics(module, from_date, to_date)
+    analytics = get_module_feedback_analytics(
+        module=module,
+        doctype_name=doctype_name,
+        feedback_form=feedback_form,
+        user=user,
+        from_date=from_date,
+        to_date=to_date
+    )
 
     prompt = f"""
 You are an expert feedback analyst.
@@ -151,7 +172,7 @@ Feedback Data:
     try:
 
         response = requests.post(
-            "http://192.168.1.70:11434/api/generate",
+            "http://192.168.1.76:11434/api/generate",
             json={
                 "model": "qwen2.5:3b",
                 "prompt": prompt,
@@ -162,7 +183,6 @@ Feedback Data:
 
         data = response.json()
 
-        # Log raw AI response for debugging
         frappe.log_error(json.dumps(data, indent=2), "AI FEEDBACK RAW RESPONSE")
 
         result = data.get("response", "").strip()
@@ -170,7 +190,6 @@ Feedback Data:
         if not result:
             return "AI could not generate feedback."
 
-        # Safety check to ensure both sections exist
         if "Working Well:" not in result:
             result = "Working Well:\nNone\n\n" + result
 
