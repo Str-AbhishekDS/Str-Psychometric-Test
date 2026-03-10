@@ -1,10 +1,10 @@
-[project]
+	[project]
 name = "nexedu"
 authors = [
     { name = "Stride nex", email = "stridenex@gmail.com"}
 ]
 description = "Education Management System"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [

@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "prompt",
  "creation": "2026-02-09 12:38:18.049849",
@@ -508,7 +509,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 16:13:21.558185",
+ "modified": "2026-02-27 14:40:15.630719",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Str Question",
@@ -532,5 +533,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

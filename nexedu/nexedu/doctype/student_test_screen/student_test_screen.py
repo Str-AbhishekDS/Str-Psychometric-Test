@@ -1,5 +1,6 @@
 import frappe
 from frappe.model.document import Document
+from nexedu.api.psychometric_ai import generate_personality
 
 
 class StudentTestScreen(Document):
@@ -11,9 +12,6 @@ class StudentTestScreen(Document):
         total_score = 0
         percentage = 0
 
-        # ---------------------------------
-        # 🔎 Detect Test Type
-        # ---------------------------------
         for row in self.str_test_response:
             question_doc = frappe.get_doc("Str Question", row.question_link)
 
@@ -21,9 +19,6 @@ class StudentTestScreen(Document):
                 is_psychometric = True
                 break
 
-        # ---------------------------------
-        # ✅ NORMAL MCQ TEST
-        # ---------------------------------
         if not is_psychometric:
 
             for row in self.str_test_response:
@@ -39,10 +34,12 @@ class StudentTestScreen(Document):
                 📊 Percentage: {round(percentage, 2)}%
             """)
 
-        # ---------------------------------
-        # ✅ PSYCHOMETRIC TEST
-        # ---------------------------------
         else:
+
+            frappe.enqueue(
+                "nexedu.api.psychometric_ai.generate_personality",
+                docname=self.name
+            )
 
             subject_scores = {}
 
@@ -236,9 +233,7 @@ class StudentTestScreen(Document):
         max_marks = question_row.marks or 0
         mark = 0
 
-        # ----------------------------
-        # MCQ TYPE
-        # ----------------------------
+
         if question_type == "Choices":
 
             # 🔹 SINGLE CORRECT
@@ -270,9 +265,7 @@ class StudentTestScreen(Document):
                     if opt and is_correct and selected_option and opt in selected_option:
                         mark = weight
 
-        # ----------------------------
-        # USER INPUT
-        # ----------------------------
+
         elif question_type == "User Input":
 
             response = user_input
@@ -282,9 +275,7 @@ class StudentTestScreen(Document):
                 if response.strip().lower() == correct_ans.strip().lower():
                     mark = max_marks
 
-        # ----------------------------
-        # OPEN ENDED
-        # ----------------------------
+
         elif question_type == "Open Ended":
 
             response = open_ended
@@ -292,13 +283,6 @@ class StudentTestScreen(Document):
             mark = 0
             max_marks = 0
 
-        # ----------------------------
-        # SAVE RESPONSE (Child Table)
-        # ----------------------------
-
-# ----------------------------
-# SAVE RESPONSE (Child Table)
-# ----------------------------
 
         existing_row = next(
             (d for d in self.str_test_response if str(d.question_link) == str(question_doc.name)),
