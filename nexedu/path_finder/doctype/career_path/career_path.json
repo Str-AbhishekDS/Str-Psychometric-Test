@@ -1,0 +1,127 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:path_name",
+ "creation": "2026-03-10 14:15:47.192719",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_identity",
+  "path_type",
+  "difficulty_level",
+  "column_break_wooh",
+  "path_name",
+  "target_role",
+  "column_break_zdaf",
+  "target_industry",
+  "estimated_duration_months",
+  "section_path_milestone",
+  "path_milestone"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_identity",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "path_type",
+   "fieldtype": "Select",
+   "label": "Path Type",
+   "options": "Job\nHigher Studies\nStartup\nGovernment Service",
+   "reqd": 1
+  },
+  {
+   "fieldname": "difficulty_level",
+   "fieldtype": "Select",
+   "label": "Difficulty Level",
+   "options": "Beginner-Friendly\nModerate\nIntensive",
+   "reqd": 1
+  },
+  {
+   "fieldname": "path_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Path Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "target_role",
+   "fieldtype": "Data",
+   "label": "Target Role",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_industry",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Target Industry",
+   "options": "Industry Sector"
+  },
+  {
+   "fieldname": "estimated_duration_months",
+   "fieldtype": "Int",
+   "label": "Estimated Duration (months)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_path_milestone",
+   "fieldtype": "Section Break",
+   "label": "Path Milestone"
+  },
+  {
+   "fieldname": "path_milestone",
+   "fieldtype": "Table",
+   "label": "Path Milestone",
+   "options": "Path Milestone"
+  },
+  {
+   "fieldname": "column_break_wooh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_zdaf",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-10 14:22:55.729555",
+ "modified_by": "Administrator",
+ "module": "Path Finder",
+ "name": "Career Path",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,113 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:skill_name",
+ "creation": "2026-03-10 14:07:16.091521",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_identity",
+  "skill_name",
+  "skill_category",
+  "column_break_zwnr",
+  "skill_level_schema",
+  "onet_code",
+  "is_trending",
+  "section_notes",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_identity",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "skill_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Skill Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "skill_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Skill Category",
+   "options": "Skill Category",
+   "reqd": 1
+  },
+  {
+   "fieldname": "skill_level_schema",
+   "fieldtype": "Select",
+   "label": "Skill Level Schema",
+   "options": "Beginner\u2192Expert\nL1\u2192L5\nAwareness\u2192Mastery",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_trending",
+   "fieldtype": "Check",
+   "label": "Trending Skill"
+  },
+  {
+   "fieldname": "onet_code",
+   "fieldtype": "Data",
+   "label": "O*net Skill Code"
+  },
+  {
+   "fieldname": "section_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes & Justification"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "column_break_zwnr",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-10 14:21:57.216240",
+ "modified_by": "Administrator",
+ "module": "Skill Ledger",
+ "name": "Skill",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,160 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:SE-.YYYY.-",
+ "creation": "2026-03-10 14:11:56.860316",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "section_identity",
+  "evidence_type",
+  "student_skill",
+  "column_break_wrrl",
+  "reference_doctype",
+  "reference_name",
+  "column_break_usdk",
+  "verified_by",
+  "verification_status",
+  "evidence_date",
+  "section_attachments",
+  "document_url",
+  "section_notes",
+  "description",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "SE-.YYYY.-"
+  },
+  {
+   "fieldname": "section_identity",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "evidence_type",
+   "fieldtype": "Select",
+   "label": "Evidence Type",
+   "options": "Course\nProject\nInternship\nAssessment\nCertification\nHackathon\nMentor Endorsement",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_skill",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student Skill",
+   "options": "Student Skill",
+   "reqd": 1
+  },
+  {
+   "fieldname": "verified_by",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Verified By",
+   "options": "User"
+  },
+  {
+   "fieldname": "verification_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Verification Status",
+   "options": "Pending\nVerified\nRejected",
+   "reqd": 1
+  },
+  {
+   "fieldname": "evidence_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Evidence Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_attachments",
+   "fieldtype": "Section Break",
+   "label": "Attachments"
+  },
+  {
+   "fieldname": "document_url",
+   "fieldtype": "Attach",
+   "label": "Evidence Document"
+  },
+  {
+   "fieldname": "section_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes & Justification"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype"
+  },
+  {
+   "fieldname": "column_break_wrrl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_usdk",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-10 14:22:19.006605",
+ "modified_by": "Administrator",
+ "module": "Skill Ledger",
+ "name": "Skill Evidence",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
