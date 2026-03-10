@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:SPE-.YYYY.-",
+ "creation": "2026-03-10 14:19:22.421049",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "status",
+  "section_identity",
+  "student",
+  "career_path",
+  "ai_recommended",
+  "column_break_vamx",
+  "current_milestone_order",
+  "completion_percent",
+  "mentor_assigned",
+  "column_break_ysyk",
+  "enrolled_at",
+  "target_date"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "SPE-.YYYY.-"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nPaused\nCompleted\nAbandoned",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_identity",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "career_path",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Career Path",
+   "options": "Career Path",
+   "reqd": 1
+  },
+  {
+   "fieldname": "current_milestone_order",
+   "fieldtype": "Int",
+   "label": "Current Milestone Order",
+   "reqd": 1
+  },
+  {
+   "fieldname": "completion_percent",
+   "fieldtype": "Float",
+   "label": "Completion Percent"
+  },
+  {
+   "default": "0",
+   "fieldname": "ai_recommended",
+   "fieldtype": "Check",
+   "label": "Ai Recommended"
+  },
+  {
+   "fieldname": "mentor_assigned",
+   "fieldtype": "Link",
+   "label": "Mentor Assigned",
+   "options": "User"
+  },
+  {
+   "fieldname": "enrolled_at",
+   "fieldtype": "Datetime",
+   "label": "Enrolled At",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Target Completion Date"
+  },
+  {
+   "fieldname": "column_break_vamx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_ysyk",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-10 14:23:31.389281",
+ "modified_by": "Administrator",
+ "module": "Path Finder",
+ "name": "Student Path Enrollment",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
