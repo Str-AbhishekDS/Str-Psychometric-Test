@@ -5,7 +5,8 @@ import frappe
 from frappe.model.document import Document
 
 
-class StrPsychometricTest(Document):
+class StrPsychometricTest(Document):        
+
     def validate(self):
         self.validate_questions_subject()
 

@@ -49,6 +49,7 @@
   "section_break_ayfe",
   "str_psychometric_group_submission",
   "section_break_inrj",
+  "ai_result",
   "question_index",
   "is_last",
   "no_of_options",
@@ -312,19 +313,16 @@
    "hidden": 1
   },
   {
-   "fieldname": "test",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Test ",
-   "options": "Str Psychometric Test",
-   "reqd": 1
+   "fieldname": "ai_result",
+   "fieldtype": "Text Editor",
+   "label": "AI Personality Result"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-05 13:55:04.261093",
+ "modified": "2026-02-27 15:16:03.735998",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Student Test Screen",

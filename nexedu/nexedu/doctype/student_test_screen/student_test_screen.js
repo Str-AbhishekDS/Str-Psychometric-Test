@@ -13,33 +13,72 @@ frappe.ui.form.on("Student Test Screen", {
         });
     },
 
-next(frm) {
+    on_submit: function(frm) {
 
-    let qtype = frm.doc.question_type;
-    let selected_option = null;
+        frappe.call({
+            method: "nexedu.api.psychometric_ai.generate_personality",
+            args: {
+                docname: frm.doc.name
+            },
+            callback: function(r) {
+                if (r.message) {
 
-    if (qtype === "Choices") {
+                    frappe.msgprint({
+                        title: "🧠 AI Personality Analysis",
+                        message: r.message,
+                        indicator: "green"
+                    });
 
-        for (let i = 1; i <= 10; i++) {
-            if (frm.doc[`is_selected_${i}`]) {
-                selected_option = frm.doc[`field_${i}`];
+                    frm.reload_doc();
+                }
+            }
+        });
+
+    },
+
+    next(frm) {
+
+        let qtype = frm.doc.question_type;
+        let selected_option = null;
+
+        if (qtype === "Choices") {
+
+            for (let i = 1; i <= 10; i++) {
+                if (frm.doc[`is_selected_${i}`]) {
+                    selected_option = frm.doc[`field_${i}`];
+                }
+            }
+
+            if (!selected_option) {
+                frappe.msgprint("Please select one option");
+                return;
             }
         }
 
-        if (!selected_option) {
-            frappe.msgprint("Please select one option");
-            return;
-        }
-    }
+        frm.call("next_question", {
+            selected_option: selected_option,
+            user_input: frm.doc.user_input,
+            open_ended: frm.doc.open_ended
+        }).then(r => {
 
-    frm.call("next_question", {
-        selected_option: selected_option,
-        user_input: frm.doc.user_input,
-        open_ended: frm.doc.open_ended
-    }).then(r => {
+            if (!r.message) return;
 
-        if (!r.message) return;
+            clear_all(frm);
+            set_question(frm, r.message);
 
+            // ✅ MOVE THIS INSIDE
+            // if (r.message.is_last) {
+            //     frm.set_value("is_last", 1);
+            //     frm.toggle_display("next", false);
+            //     frm.set_df_property("next","hidden",1);
+            //     frm.refresh_field("next");
+            // } else {
+            //     frm.set_value("is_last", 0);
+            //     frm.toggle_display("next", true);
+            //     frm.set_df_property("next","hidden",0);
+            // }
+
+        });
         // ✅ If test completed
         if (r.message.completed) {
 
@@ -69,7 +108,7 @@ next(frm) {
 
     });
 
-},
+    },
 
     previous(frm) {
 
@@ -110,9 +149,6 @@ next(frm) {
 });
 
 
-/* =========================
-   LOAD QUESTION
-========================= */
 
 function load_question(frm) {
 
@@ -132,10 +168,6 @@ function load_question(frm) {
 }
 
 
-
-/* =========================
-   SET QUESTION
-========================= */
 
 function set_question(frm, data) {
     // 🔹 Clear all first
@@ -175,9 +207,7 @@ function set_question(frm, data) {
 }
 
 
-/* =========================
-   CLEAR ALL
-========================= */
+
 
 function clear_all(frm) {
 
@@ -191,9 +221,6 @@ function clear_all(frm) {
 }
 
 
-/* =========================
-   SINGLE SELECT CHECKBOX CONTROL
-========================= */
 
 frappe.ui.form.on("Student Test Screen", {
 

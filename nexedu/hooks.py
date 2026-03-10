@@ -7,6 +7,13 @@ app_license = "mit"
 
 
 
+
+
+app_include_js = [
+    "https://cdn.jsdelivr.net/npm/chart.js"
+]
+
+
 # Apps
 # ------------------
 
