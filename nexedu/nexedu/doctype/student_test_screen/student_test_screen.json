@@ -7,7 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "section_break_ocdb",
-  "test_type",
+  "test",
   "subject",
   "column_break_xxuf",
   "question_type",
@@ -70,14 +70,6 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "fieldname": "test_type",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Test Type",
-   "options": "Str Psychometric Test",
-   "reqd": 1
   },
   {
    "fieldname": "section_break_zfqc",

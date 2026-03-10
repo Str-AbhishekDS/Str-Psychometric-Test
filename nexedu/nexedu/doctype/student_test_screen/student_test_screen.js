@@ -6,7 +6,7 @@ frappe.ui.form.on("Student Test Screen", {
         }
     },
 
-    test_type(frm) {
+    test(frm) {
         frm.set_value("question_index", 0);
         frm.save().then(() => {
             load_question(frm);
@@ -79,6 +79,34 @@ frappe.ui.form.on("Student Test Screen", {
             // }
 
         });
+        // ✅ If test completed
+        if (r.message.completed) {
+
+            frappe.msgprint("✅ Test Completed Successfully");
+
+            // Clear screen
+            clear_all(frm);
+
+            frm.set_value("question", "");
+            frm.set_value("question_type", "");
+            frm.set_value("subject", "");
+
+            // Hide all options
+            for (let i = 1; i <= 10; i++) {
+                frm.toggle_display(`field_${i}`, false);
+                frm.toggle_display(`is_selected_${i}`, false);
+            }
+
+            frm.refresh_fields();
+
+            return; // ❗ Stop loading question again
+        }
+
+        // Normal flow
+        clear_all(frm);
+        set_question(frm, r.message);
+
+    });
 
     },
 
@@ -105,7 +133,8 @@ frappe.ui.form.on("Student Test Screen", {
 
                     if (option_text && option_text.trim() === saved) {
                         frm.set_value(`is_selected_${i}`, 1);
-                        break;
+                    } else {
+                        frm.set_value(`is_selected_${i}`, 0);
                     }
                 }
 
@@ -142,7 +171,7 @@ function load_question(frm) {
 
 function set_question(frm, data) {
     // 🔹 Clear all first
-    clear_all(frm);
+    // clear_all(frm);
 
     // 🔹 Set options dynamically
     if (data.options) {

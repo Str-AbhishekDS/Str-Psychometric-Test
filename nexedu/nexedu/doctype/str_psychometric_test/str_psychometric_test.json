@@ -156,7 +156,7 @@
   },
   {
    "fieldname": "psychometric_test_subject",
-   "fieldtype": "Table",
+   "fieldtype": "Table MultiSelect",
    "label": "Psychometric Test Subjects",
    "options": "Str Psychometric Test Subject Detail"
   }
@@ -164,7 +164,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 15:00:42.226701",
+ "modified": "2026-03-05 15:05:34.901039",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Str Psychometric Test",

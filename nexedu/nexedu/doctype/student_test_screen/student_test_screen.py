@@ -7,6 +7,10 @@ class StudentTestScreen(Document):
     def on_submit(self):
 
         is_psychometric = False
+        # IMPORTANT: define variables here
+        obtained_score = 0
+        total_score = 0
+        percentage = 0
 
         for row in self.str_test_response:
             question_doc = frappe.get_doc("Str Question", row.question_link)
@@ -17,14 +21,10 @@ class StudentTestScreen(Document):
 
         if not is_psychometric:
 
-            obtained_score = 0
-            total_score = 0
-
             for row in self.str_test_response:
                 obtained_score += row.mark or 0
                 total_score += row.maximum_marks or 0
 
-            percentage = 0
             if total_score > 0:
                 percentage = (obtained_score / total_score) * 100
 
@@ -91,6 +91,39 @@ class StudentTestScreen(Document):
                 <b>Final Result: {result}</b>
             """)
 
+
+        psychometric_test_type = frappe.db.get_value(
+            "Str Psychometric Test",
+            self.test,
+            "psychometric_test_type"
+        )
+
+
+        doc = frappe.new_doc("Str Psychometric Test Submission")
+
+        doc.student_test_screen = self.name
+        doc.psychometric_test = self.test
+        doc.psychometric_test_type = psychometric_test_type
+        doc.member = frappe.session.user
+        doc.score = obtained_score
+        doc.score_out_of = total_score
+        doc.percentage = percentage
+        doc.passing_percentage = 50
+
+        for values in self.str_test_response:
+
+            doc.append("str_test_response", {
+                "question": values.question,
+                "question_link": values.question_link,
+                "response": values.response,
+                "correct_ans": values.correct_ans,
+                "mark": values.mark,
+                "maximum_marks": values.maximum_marks,
+                "type": values.type,
+                "subject": values.subject
+            })
+
+        doc.insert(ignore_permissions=True)
         
     def before_save(self):
         subject_scores = {}
@@ -131,7 +164,7 @@ class StudentTestScreen(Document):
     @frappe.whitelist()
     def load_question(self):
 
-        test = frappe.get_doc("Str Psychometric Test", self.test_type)
+        test = frappe.get_doc("Str Psychometric Test", self.test)
         questions = test.str_psychometric_test_question
 
         index = self.question_index or 0
@@ -146,7 +179,7 @@ class StudentTestScreen(Document):
         # Get subject
         question_sub = frappe.get_value(
             "Str Psychometric Test Question",
-            {"question_detail": question_doc.question, "parent": self.test_type},
+            {"question_detail": question_doc.question, "parent": self.test},
             "psychometric_test_subject"
         )
 
@@ -169,7 +202,7 @@ class StudentTestScreen(Document):
         return {
             "question": question_doc.question,
             "question_type": question_doc.type,
-            "subject": question_sub,
+            "subject": question_sub or "General",
             "options": options,
             "multiple_correct": question_doc.multiple_correct_answers,
             "is_last": (index == total - 1),
@@ -182,7 +215,7 @@ class StudentTestScreen(Document):
     @frappe.whitelist()
     def next_question(self, selected_option=None, user_input=None, open_ended=None):
 
-        test = frappe.get_doc("Str Psychometric Test", self.test_type)
+        test = frappe.get_doc("Str Psychometric Test", self.test)
         questions = test.str_psychometric_test_question
 
         index = self.question_index or 0
@@ -261,7 +294,7 @@ class StudentTestScreen(Document):
 
         row = existing_row
         
-        question_sub = frappe.get_value("Str Psychometric Test Question", {"question_detail": question_doc.question, "parent": self.test_type}, "psychometric_test_subject")
+        question_sub = frappe.get_value("Str Psychometric Test Question", {"question_detail": question_doc.question, "parent": self.test}, "psychometric_test_subject")
         # frappe.throw(str(question_sub))
         row.question = question_doc.question
         row.question_link = question_doc.name
@@ -272,14 +305,26 @@ class StudentTestScreen(Document):
         row.subject = question_sub
         row.type = question_type
 
+        # ----------------------------
+        # MOVE TO NEXT QUESTION
+        # ----------------------------
+
 
         # Increase index AFTER saving response
         self.question_index += 1
         self.save(ignore_permissions=True)
 
         # If all questions completed
+        # if self.question_index >= total:
+        #     return {"completed": True}
+        
         if self.question_index >= total:
-            return {"completed": True}
+            self.status = "Completed"
+            self.save(ignore_permissions=True)
+
+            return {
+                "completed": True
+            }
 
         # Otherwise load next question
         next_row = questions[self.question_index]
@@ -293,7 +338,7 @@ class StudentTestScreen(Document):
 
         question_sub = frappe.get_value(
             "Str Psychometric Test Question",
-            {"question_detail": next_doc.question, "parent": self.test_type},
+            {"question_detail": next_doc.question, "parent": self.test},
             "psychometric_test_subject"
         )
 
@@ -303,7 +348,7 @@ class StudentTestScreen(Document):
             "options": options,
             "multiple_correct": next_doc.multiple_correct_answers,
             "is_last": (self.question_index == total - 1),
-            "subject": question_sub,
+            "subject": question_sub or "General",
             "completed": False
         }
 
@@ -319,7 +364,7 @@ class StudentTestScreen(Document):
         # Move back
         self.question_index -= 1
 
-        test = frappe.get_doc("Str Psychometric Test", self.test_type)
+        test = frappe.get_doc("Str Psychometric Test", self.test)
         questions = test.str_psychometric_test_question
 
         question_row = questions[self.question_index]
@@ -341,7 +386,7 @@ class StudentTestScreen(Document):
             if opt:
                 options.append(opt)
 
-        question_sub = frappe.get_value("Str Psychometric Test Question", {"question_detail": question_doc.question, "parent": self.test_type}, "psychometric_test_subject")
+        question_sub = frappe.get_value("Str Psychometric Test Question", {"question_detail": question_doc.question, "parent": self.test}, "psychometric_test_subject")
         self.save(ignore_permissions=True)
 
         return {
