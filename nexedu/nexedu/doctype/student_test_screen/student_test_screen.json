@@ -45,6 +45,7 @@
   "column_break_sldg",
   "next",
   "section_break_znly",
+  "column_break_fheb",
   "str_test_response",
   "section_break_ayfe",
   "str_psychometric_group_submission",
@@ -85,7 +86,8 @@
    "depends_on": "eval:doc.question_type==\"Choices\";\n",
    "fieldname": "section_break_hjyw",
    "fieldtype": "Section Break",
-   "label": "MCQ"
+   "label": "MCQ",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_rwah",
@@ -111,7 +113,8 @@
    "fieldname": "str_test_response",
    "fieldtype": "Table",
    "label": "Str Test Response",
-   "options": "Str Test Response"
+   "options": "Str Test Response",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_uggb",
@@ -129,7 +132,8 @@
    "fieldname": "question_type",
    "fieldtype": "Select",
    "label": "Question Type",
-   "options": "Choices\nUser Input\nOpen Ended"
+   "options": "Choices\nUser Input\nOpen Ended",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.question_type==\"User Input\";\n",
@@ -236,52 +240,62 @@
   {
    "fieldname": "field_1",
    "fieldtype": "Small Text",
-   "label": "A"
+   "label": "A",
+   "read_only": 1
   },
   {
    "fieldname": "field_3",
    "fieldtype": "Small Text",
-   "label": "C"
+   "label": "C",
+   "read_only": 1
   },
   {
    "fieldname": "field_5",
    "fieldtype": "Small Text",
-   "label": "E"
+   "label": "E",
+   "read_only": 1
   },
   {
    "fieldname": "field_7",
    "fieldtype": "Small Text",
-   "label": "G"
+   "label": "G",
+   "read_only": 1
   },
   {
    "fieldname": "field_9",
    "fieldtype": "Small Text",
-   "label": "I"
+   "label": "I",
+   "read_only": 1
   },
   {
    "fieldname": "field_2",
    "fieldtype": "Small Text",
-   "label": "B"
+   "label": "B",
+   "read_only": 1
   },
   {
    "fieldname": "field_4",
    "fieldtype": "Small Text",
-   "label": "D"
+   "label": "D",
+   "read_only": 1
   },
   {
    "fieldname": "field_6",
    "fieldtype": "Small Text",
-   "label": "F"
+   "label": "F",
+   "read_only": 1
   },
   {
    "fieldname": "field_8",
    "fieldtype": "Small Text",
-   "label": "H"
+   "label": "H",
+   "read_only": 1
   },
   {
    "fieldname": "field_10",
    "fieldtype": "Small Text",
-   "label": "J"
+   "label": "J",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_xxuf",
@@ -291,7 +305,8 @@
    "fieldname": "subject",
    "fieldtype": "Link",
    "label": "Subject",
-   "options": "Str Psychometric Subject"
+   "options": "Str Psychometric Subject",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_ayfe",
@@ -301,7 +316,8 @@
    "fieldname": "str_psychometric_group_submission",
    "fieldtype": "Table",
    "label": "Str Psychometric Group Submission",
-   "options": "Str Psychometric Group Submission"
+   "options": "Str Psychometric Group Submission",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_inrj",
@@ -316,13 +332,24 @@
    "fieldname": "ai_result",
    "fieldtype": "Text Editor",
    "label": "AI Personality Result"
+  },
+  {
+   "fieldname": "test",
+   "fieldtype": "Link",
+   "label": "Test",
+   "options": "Str Psychometric Test"
+  },
+  {
+   "fieldname": "column_break_fheb",
+   "fieldtype": "Column Break",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-27 15:16:03.735998",
+ "modified": "2026-03-10 11:37:59.381566",
  "modified_by": "Administrator",
  "module": "Nexedu",
  "name": "Student Test Screen",
