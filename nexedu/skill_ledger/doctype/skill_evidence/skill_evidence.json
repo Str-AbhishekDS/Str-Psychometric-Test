@@ -7,6 +7,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "column_break_wkkx",
   "naming_series",
   "section_identity",
   "evidence_type",
@@ -17,8 +18,8 @@
   "column_break_usdk",
   "verified_by",
   "verification_status",
-  "evidence_date",
   "section_attachments",
+  "evidence_date",
   "document_url",
   "section_notes",
   "description",
@@ -28,6 +29,7 @@
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Series",
    "options": "SE-.YYYY.-"
   },
@@ -117,12 +119,18 @@
   {
    "fieldname": "column_break_usdk",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_wkkx",
+   "fieldtype": "Column Break",
+   "hidden": 1,
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 14:22:19.006605",
+ "modified": "2026-03-14 15:29:30.526567",
  "modified_by": "Administrator",
  "module": "Skill Ledger",
  "name": "Skill Evidence",

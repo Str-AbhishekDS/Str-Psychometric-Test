@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "SSL-.#####",
+ "creation": "2026-03-14 11:03:36.124971",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_skill",
+  "skill",
+  "skill_level",
+  "status",
+  "column_break_cxwg",
+  "event_type",
+  "evidence_count",
+  "endorsement_count",
+  "event_time",
+  "section_break_izcy",
+  "reference_doctype",
+  "column_break_edjv",
+  "reference_name",
+  "section_break_wnql",
+  "comment"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_skill",
+   "fieldtype": "Link",
+   "label": "Student Skill",
+   "options": "Student Skill",
+   "reqd": 1
+  },
+  {
+   "fieldname": "skill",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Skill",
+   "options": "Skill",
+   "reqd": 1
+  },
+  {
+   "fieldname": "skill_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Skill Level",
+   "options": "Beginner\nIntermediate\nAdvanced\nExpert"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nVerified\nRejected"
+  },
+  {
+   "fieldname": "event_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event Type",
+   "options": "Self Declared\nEvidence Added\nVerification\nEndorsement Added\nSkill Level Updated\nAI Assessment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "evidence_count",
+   "fieldtype": "Int",
+   "label": "Evidence Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "endorsement_count",
+   "fieldtype": "Int",
+   "label": "Endorsement Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference DocType",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Text",
+   "label": "Comment"
+  },
+  {
+   "default": "Now",
+   "fieldname": "event_time",
+   "fieldtype": "Datetime",
+   "label": "Event Time"
+  },
+  {
+   "fieldname": "column_break_cxwg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_wnql",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_izcy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_edjv",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "in_create": 1,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-14 16:52:44.631819",
+ "modified_by": "Administrator",
+ "module": "Skill Ledger",
+ "name": "Student Skill Ledger",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Student"
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
