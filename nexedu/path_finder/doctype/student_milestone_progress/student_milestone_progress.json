@@ -1,0 +1,141 @@
+{
+ "actions": [],
+ "creation": "2026-03-26 14:14:40.921142",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "milestone",
+  "milestone_title",
+  "milestone_order",
+  "milestone_type",
+  "linked_skill",
+  "assessment",
+  "status",
+  "is_skippable",
+  "column_break_jujx",
+  "pass_percentage",
+  "review_status",
+  "project_link",
+  "started_on",
+  "completed_on",
+  "score",
+  "is_lock",
+  "is_skipped"
+ ],
+ "fields": [
+  {
+   "fieldname": "milestone",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Milestone",
+   "options": "Path Milestone",
+   "reqd": 1
+  },
+  {
+   "fieldname": "milestone_title",
+   "fieldtype": "Data",
+   "label": "Milestone Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "milestone_order",
+   "fieldtype": "Int",
+   "label": "Milestone Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "milestone_type",
+   "fieldtype": "Select",
+   "label": "Milestone Type",
+   "options": "\nLearn\nBuild\nAssess\nApply\nConnect",
+   "read_only": 1
+  },
+  {
+   "fieldname": "linked_skill",
+   "fieldtype": "Link",
+   "label": "Linked Skill",
+   "options": "Skill"
+  },
+  {
+   "fieldname": "assessment",
+   "fieldtype": "Link",
+   "label": "Assessment",
+   "options": "Assessment"
+  },
+  {
+   "default": "Not Started",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nNot Started\nIn Progress\nCompleted\nSkipped"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_skipped",
+   "fieldtype": "Check",
+   "label": "Is Skipped"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_skippable",
+   "fieldtype": "Check",
+   "label": "Is Skippable"
+  },
+  {
+   "depends_on": "eval:doc.milestone_type=='Build'",
+   "fieldname": "project_link",
+   "fieldtype": "Data",
+   "label": "Project Link"
+  },
+  {
+   "fieldname": "review_status",
+   "fieldtype": "Select",
+   "label": "Review Status",
+   "options": "\nPending\nApproved\nRejected"
+  },
+  {
+   "fieldname": "started_on",
+   "fieldtype": "Date",
+   "label": "Started On"
+  },
+  {
+   "fieldname": "completed_on",
+   "fieldtype": "Date",
+   "label": "Completed On"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_lock",
+   "fieldtype": "Check",
+   "label": "Is Lock"
+  },
+  {
+   "fieldname": "pass_percentage",
+   "fieldtype": "Float",
+   "label": "Pass Percentage"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Float",
+   "label": "Score"
+  },
+  {
+   "fieldname": "column_break_jujx",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-27 12:43:05.293391",
+ "modified_by": "Administrator",
+ "module": "Path Finder",
+ "name": "Student Milestone Progress",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "milestone_order",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

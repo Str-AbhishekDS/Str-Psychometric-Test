@@ -1,0 +1,367 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "{assessment}-.####",
+ "creation": "2026-03-25 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_1",
+  "assessment",
+  "subject",
+  "column_break_1",
+  "question_type",
+  "time_remaining",
+  "section_break_2",
+  "question",
+  "section_break_mcq",
+  "field_1",
+  "is_selected_1",
+  "field_3",
+  "is_selected_3",
+  "field_5",
+  "is_selected_5",
+  "field_7",
+  "is_selected_7",
+  "field_9",
+  "is_selected_9",
+  "column_break_2",
+  "field_2",
+  "is_selected_2",
+  "field_4",
+  "is_selected_4",
+  "field_6",
+  "is_selected_6",
+  "field_8",
+  "is_selected_8",
+  "field_10",
+  "is_selected_10",
+  "section_break_userinput",
+  "user_input",
+  "section_break_openended",
+  "open_ended",
+  "section_break_nav",
+  "column_break_nav1",
+  "previous",
+  "column_break_nav2",
+  "next",
+  "section_break_response",
+  "column_break_resp",
+  "str_test_response",
+  "section_break_hidden",
+  "question_index",
+  "is_last",
+  "no_of_options",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "assessment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Assessment",
+   "options": "Assessment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "label": "Subject",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "question_type",
+   "fieldtype": "Select",
+   "label": "Question Type",
+   "options": "Choices\nUser Input\nOpen Ended",
+   "read_only": 1
+  },
+  {
+   "fieldname": "time_remaining",
+   "fieldtype": "Data",
+   "label": "Time Remaining",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Text Editor",
+   "label": "Question",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.question_type==\"Choices\"",
+   "fieldname": "section_break_mcq",
+   "fieldtype": "Section Break",
+   "label": "MCQ"
+  },
+  {
+   "fieldname": "field_1",
+   "fieldtype": "Small Text",
+   "label": "A",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_1",
+   "fieldtype": "Check",
+   "label": "Select 1"
+  },
+  {
+   "fieldname": "field_3",
+   "fieldtype": "Small Text",
+   "label": "C",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_3",
+   "fieldtype": "Check",
+   "label": "Select 3"
+  },
+  {
+   "fieldname": "field_5",
+   "fieldtype": "Small Text",
+   "label": "E",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_5",
+   "fieldtype": "Check",
+   "label": "Select 5"
+  },
+  {
+   "fieldname": "field_7",
+   "fieldtype": "Small Text",
+   "label": "G",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_7",
+   "fieldtype": "Check",
+   "label": "Select 7"
+  },
+  {
+   "fieldname": "field_9",
+   "fieldtype": "Small Text",
+   "label": "I",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_9",
+   "fieldtype": "Check",
+   "label": "Select 9"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "field_2",
+   "fieldtype": "Small Text",
+   "label": "B",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_2",
+   "fieldtype": "Check",
+   "label": "Select 2"
+  },
+  {
+   "fieldname": "field_4",
+   "fieldtype": "Small Text",
+   "label": "D",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_4",
+   "fieldtype": "Check",
+   "label": "Select 4"
+  },
+  {
+   "fieldname": "field_6",
+   "fieldtype": "Small Text",
+   "label": "F",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_6",
+   "fieldtype": "Check",
+   "label": "Select 6"
+  },
+  {
+   "fieldname": "field_8",
+   "fieldtype": "Small Text",
+   "label": "H",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_8",
+   "fieldtype": "Check",
+   "label": "Select 8"
+  },
+  {
+   "fieldname": "field_10",
+   "fieldtype": "Small Text",
+   "label": "J",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_selected_10",
+   "fieldtype": "Check",
+   "label": "Select 10"
+  },
+  {
+   "depends_on": "eval:doc.question_type==\"User Input\"",
+   "fieldname": "section_break_userinput",
+   "fieldtype": "Section Break",
+   "label": "User Input"
+  },
+  {
+   "fieldname": "user_input",
+   "fieldtype": "Small Text",
+   "label": "Answer"
+  },
+  {
+   "depends_on": "eval:doc.question_type==\"Open Ended\"",
+   "fieldname": "section_break_openended",
+   "fieldtype": "Section Break",
+   "label": "Open Ended"
+  },
+  {
+   "fieldname": "open_ended",
+   "fieldtype": "Small Text",
+   "label": "Answer"
+  },
+  {
+   "fieldname": "section_break_nav",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_nav1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.question_index >= 1",
+   "fieldname": "previous",
+   "fieldtype": "Button",
+   "label": "Previous"
+  },
+  {
+   "fieldname": "column_break_nav2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "next",
+   "fieldtype": "Button",
+   "label": "Next"
+  },
+  {
+   "fieldname": "section_break_response",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_resp",
+   "fieldtype": "Column Break",
+   "read_only": 1
+  },
+  {
+   "fieldname": "str_test_response",
+   "fieldtype": "Table",
+   "label": "Responses",
+   "options": "Str Test Response",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_hidden",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "question_index",
+   "fieldtype": "Int",
+   "label": "Question Index"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_last",
+   "fieldtype": "Check",
+   "label": "Is Last"
+  },
+  {
+   "fieldname": "no_of_options",
+   "fieldtype": "Select",
+   "label": "No of Options",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Assessment Screen",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-03-25 16:31:25.145661",
+ "modified_by": "Administrator",
+ "module": "Assessment",
+ "name": "Student Assessment Screen",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Student",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

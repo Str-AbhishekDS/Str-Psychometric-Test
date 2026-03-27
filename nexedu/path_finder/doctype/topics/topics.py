@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class StrPsychometricTestResult(Document):
+class Topics(Document):
 	pass

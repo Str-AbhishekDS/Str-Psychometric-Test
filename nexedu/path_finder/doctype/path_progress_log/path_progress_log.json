@@ -10,12 +10,15 @@
   "naming_series",
   "section_identity",
   "enrollment",
+  "career_path",
   "milestone",
+  "order",
   "column_break_wlqm",
   "ai_feedback",
   "column_break_ypzc",
   "score",
-  "completed_at"
+  "completed_at",
+  "evidence"
  ],
  "fields": [
   {
@@ -42,8 +45,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Milestone",
-   "options": "Path Milestone",
-   "reqd": 1
+   "options": "Path Milestone"
   },
   {
    "fieldname": "ai_feedback",
@@ -56,6 +58,7 @@
    "label": "Score"
   },
   {
+   "default": "Now",
    "fieldname": "completed_at",
    "fieldtype": "Datetime",
    "label": "Completed At",
@@ -68,12 +71,32 @@
   {
    "fieldname": "column_break_ypzc",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "evidence",
+   "fieldtype": "Link",
+   "label": "Evidence",
+   "options": "Skill Evidence"
+  },
+  {
+   "fetch_from": "milestone.order",
+   "fieldname": "order",
+   "fieldtype": "Int",
+   "label": "Order"
+  },
+  {
+   "fetch_from": "enrollment.career_path",
+   "fieldname": "career_path",
+   "fieldtype": "Link",
+   "label": "Career Path",
+   "options": "Career Path",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 14:21:20.275489",
+ "modified": "2026-03-24 11:18:49.666996",
  "modified_by": "Administrator",
  "module": "Path Finder",
  "name": "Path Progress Log",

@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:path_name",
  "creation": "2026-03-10 14:15:47.192719",
@@ -8,16 +9,22 @@
  "engine": "InnoDB",
  "field_order": [
   "section_identity",
+  "path_name",
   "path_type",
   "difficulty_level",
   "column_break_wooh",
-  "path_name",
   "target_role",
-  "column_break_zdaf",
   "target_industry",
   "estimated_duration_months",
+  "column_break_zdaf",
+  "success_stories",
+  "average_salary_lpa",
+  "created_by",
+  "section_break_fvil",
+  "prerequisite_skills",
+  "path_milestone",
   "section_path_milestone",
-  "path_milestone"
+  "published"
  ],
  "fields": [
   {
@@ -72,24 +79,58 @@
    "label": "Path Milestone"
   },
   {
-   "fieldname": "path_milestone",
-   "fieldtype": "Table",
-   "label": "Path Milestone",
-   "options": "Path Milestone"
-  },
-  {
    "fieldname": "column_break_wooh",
    "fieldtype": "Column Break"
   },
   {
    "fieldname": "column_break_zdaf",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_fvil",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "success_stories",
+   "fieldtype": "Int",
+   "label": "Success Stories"
+  },
+  {
+   "fieldname": "average_salary_lpa",
+   "fieldtype": "Float",
+   "label": "Average Salary (lpa)"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Created By",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Published"
+  },
+  {
+   "fieldname": "path_milestone",
+   "fieldtype": "Table",
+   "label": "Path Milestone",
+   "options": "Path Milestone"
+  },
+  {
+   "fieldname": "prerequisite_skills",
+   "fieldtype": "Table",
+   "label": "Prerequisite Skills",
+   "options": "Prerequisite Skills"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 14:22:55.729555",
+ "modified": "2026-03-24 14:15:21.422982",
  "modified_by": "Administrator",
  "module": "Path Finder",
  "name": "Career Path",

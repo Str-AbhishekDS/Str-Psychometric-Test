@@ -13,9 +13,9 @@ IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
 
-class IntegrationTestStrPsychometricTestResult(IntegrationTestCase):
+class IntegrationTestPrerequisiteSkills(IntegrationTestCase):
 	"""
-	Integration tests for StrPsychometricTestResult.
+	Integration tests for PrerequisiteSkills.
 	Use this class for testing interactions between multiple components.
 	"""
 

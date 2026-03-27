@@ -10,11 +10,17 @@
   "section_identity",
   "skill_name",
   "skill_category",
+  "topic",
   "column_break_zwnr",
+  "subtopic",
   "skill_level_schema",
   "onet_code",
-  "is_trending",
+  "section_break_zbqm",
+  "recommended_path",
+  "column_break_blty",
+  "min_level_achieved",
   "section_notes",
+  "is_trending",
   "description"
  ],
  "fields": [
@@ -70,12 +76,44 @@
   {
    "fieldname": "column_break_zwnr",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "topic",
+   "fieldtype": "Link",
+   "label": "Topic",
+   "options": "Topics"
+  },
+  {
+   "fieldname": "subtopic",
+   "fieldtype": "Link",
+   "label": "Subtopic",
+   "options": "Subtopic"
+  },
+  {
+   "fieldname": "recommended_path",
+   "fieldtype": "Link",
+   "label": "Recommended Path",
+   "options": "Career Path"
+  },
+  {
+   "fieldname": "min_level_achieved",
+   "fieldtype": "Select",
+   "label": "Min Level Achieved",
+   "options": "Beginner\nIntermediate\nAdvanced"
+  },
+  {
+   "fieldname": "section_break_zbqm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_blty",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-13 12:24:50.602101",
+ "modified": "2026-03-25 11:13:42.873646",
  "modified_by": "Administrator",
  "module": "Skill Ledger",
  "name": "Skill",
