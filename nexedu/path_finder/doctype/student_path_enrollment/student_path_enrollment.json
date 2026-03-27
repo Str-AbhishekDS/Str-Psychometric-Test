@@ -9,24 +9,32 @@
  "field_order": [
   "naming_series",
   "status",
+  "column_break_gdda",
+  "triggered_from",
   "section_identity",
   "student",
   "career_path",
   "ai_recommended",
+  "current_milestone",
   "column_break_vamx",
   "current_milestone_order",
   "completion_percent",
   "mentor_assigned",
+  "is_prerequisite",
   "column_break_ysyk",
   "enrolled_at",
-  "target_date"
+  "target_date",
+  "skill_match_percent",
+  "section_break_mfik",
+  "milestone_progress"
  ],
  "fields": [
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Series",
-   "options": "SPE-.YYYY.-"
+   "options": "SPE-.YYYY.-",
+   "read_only": 1
   },
   {
    "fieldname": "status",
@@ -46,7 +54,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Student",
-   "options": "User",
+   "options": "Student",
    "reqd": 1
   },
   {
@@ -78,9 +86,10 @@
    "fieldname": "mentor_assigned",
    "fieldtype": "Link",
    "label": "Mentor Assigned",
-   "options": "User"
+   "options": "Mentor"
   },
   {
+   "default": "Now",
    "fieldname": "enrolled_at",
    "fieldtype": "Datetime",
    "label": "Enrolled At",
@@ -99,12 +108,49 @@
   {
    "fieldname": "column_break_ysyk",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "current_milestone",
+   "fieldtype": "Link",
+   "label": "Current Milestone",
+   "options": "Path Milestone"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_prerequisite",
+   "fieldtype": "Check",
+   "label": "Is Prerequisite"
+  },
+  {
+   "fieldname": "skill_match_percent",
+   "fieldtype": "Float",
+   "label": "Skill Match Percent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_mfik",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "milestone_progress",
+   "fieldtype": "Table",
+   "label": "Milestone Progress",
+   "options": "Student Milestone Progress"
+  },
+  {
+   "fieldname": "column_break_gdda",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "triggered_from",
+   "fieldtype": "Data",
+   "label": "triggered_from"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 14:23:31.389281",
+ "modified": "2026-03-26 16:40:31.597871",
  "modified_by": "Administrator",
  "module": "Path Finder",
  "name": "Student Path Enrollment",

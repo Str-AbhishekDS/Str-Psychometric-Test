@@ -1,0 +1,141 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "{assessment}-{member}-.##",
+ "creation": "2026-03-25 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "assessment",
+  "column_break_1",
+  "member",
+  "student_assessment_screen",
+  "section_break_1",
+  "score",
+  "score_out_of",
+  "grade",
+  "column_break_2",
+  "percentage",
+  "passing_marks",
+  "result",
+  "section_break_2",
+  "str_test_response"
+ ],
+ "fields": [
+  {
+   "fieldname": "assessment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Assessment",
+   "options": "Assessment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Member",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_assessment_screen",
+   "fieldtype": "Link",
+   "label": "Student Assessment Screen",
+   "options": "Student Assessment Screen"
+  },
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Score",
+   "reqd": 1
+  },
+  {
+   "fieldname": "score_out_of",
+   "fieldtype": "Int",
+   "label": "Score Out Of",
+   "non_negative": 1,
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Grade"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "label": "Percentage",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "passing_marks",
+   "fieldtype": "Int",
+   "label": "Passing Marks",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "result",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Result",
+   "options": "\nPass\nFail"
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "str_test_response",
+   "fieldtype": "Table",
+   "label": "Responses",
+   "options": "Str Test Response"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-25 16:31:25.009340",
+ "modified_by": "Administrator",
+ "module": "Assessment",
+ "name": "Assessment Submission",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

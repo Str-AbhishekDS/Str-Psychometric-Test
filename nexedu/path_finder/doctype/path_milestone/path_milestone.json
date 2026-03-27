@@ -1,61 +1,153 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-03-10 14:15:47.127254",
+ "autoname": "autoincrement",
+ "creation": "2026-03-17 11:14:57.058010",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "success_stories",
-  "created_by",
-  "column_break_jwxb",
-  "avg_salary_lpa",
-  "is_published"
+  "milestone_title",
+  "milestone_type",
+  "order",
+  "required_skill_level",
+  "is_mandatory",
+  "category",
+  "topic",
+  "subtopic",
+  "skill",
+  "column_break_wowp",
+  "linked_resource_type",
+  "reference_doctype",
+  "linked_resource",
+  "duration_days",
+  "pass_percentage",
+  "assessment"
  ],
  "fields": [
   {
-   "fieldname": "success_stories",
-   "fieldtype": "Int",
-   "label": "Success Stories"
+   "fieldname": "milestone_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Milestone Title",
+   "reqd": 1
   },
   {
-   "fieldname": "created_by",
+   "fieldname": "milestone_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Milestone Type",
+   "options": "Learn\nBuild\nAssess\nConnect\nApply",
+   "reqd": 1
+  },
+  {
+   "fieldname": "order",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Order",
+   "reqd": 1
+  },
+  {
+   "fieldname": "linked_resource_type",
+   "fieldtype": "Select",
+   "label": "Linked Resource Type",
+   "options": "Course\nAssessment\nProject\nInternship\nMentor Session"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference DocType",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "linked_resource",
+   "fieldtype": "Dynamic Link",
+   "label": "Linked Resource",
+   "options": "reference_doctype"
+  },
+  {
+   "fieldname": "required_skill_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Required Skill Level",
+   "options": "Beginner\nIntermediate\nAdvanced"
+  },
+  {
+   "fieldname": "duration_days",
+   "fieldtype": "Int",
+   "label": "Duration (Days)"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Mandatory",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_wowp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "category",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Created By",
-   "options": "User",
-   "reqd": 1
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Skill Category"
   },
   {
-   "fieldname": "avg_salary_lpa",
+   "fieldname": "topic",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Topic",
+   "options": "Topics"
+  },
+  {
+   "fieldname": "subtopic",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Subtopic",
+   "options": "Subtopic"
+  },
+  {
+   "fieldname": "skill",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Skill",
+   "options": "Skill"
+  },
+  {
+   "fieldname": "pass_percentage",
    "fieldtype": "Float",
-   "label": "Average Salary (lpa)"
+   "label": "Pass Percentage"
   },
   {
-   "default": "0",
-   "fieldname": "is_published",
-   "fieldtype": "Check",
-   "label": "Published",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_jwxb",
-   "fieldtype": "Column Break"
+   "fieldname": "assessment",
+   "fieldtype": "Link",
+   "label": "Assessment",
+   "options": "Assessment"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-10 14:22:41.694974",
+ "modified": "2026-03-26 16:21:18.993534",
  "modified_by": "Administrator",
  "module": "Path Finder",
  "name": "Path Milestone",
+ "naming_rule": "Autoincrement",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
- "sort_field": "creation",
- "sort_order": "DESC",
- "states": []
+ "sort_field": "order",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
 }

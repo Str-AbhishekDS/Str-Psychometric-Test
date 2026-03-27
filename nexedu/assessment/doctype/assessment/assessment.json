@@ -1,0 +1,223 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:assessment_name",
+ "creation": "2026-03-25 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_1",
+  "assessment_name",
+  "assessment_type",
+  "is_published",
+  "column_break_1",
+  "created_by",
+  "is_active",
+  "section_break_2",
+  "valid_from",
+  "duration_minutes",
+  "passing_marks",
+  "column_break_2",
+  "valid_to",
+  "total_marks",
+  "result_visibility",
+  "section_break_3",
+  "allow_retakes",
+  "randomise_questions",
+  "certificate_on_pass",
+  "column_break_3",
+  "proctoring_enabled",
+  "section_break_4",
+  "skill_tags",
+  "section_break_5",
+  "grade_config",
+  "section_break_6",
+  "assessment_question"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "assessment_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Assessment Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "assessment_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Assessment Type",
+   "options": "Skill Certification\nCampus Test\nHiring Assessment\nPlacement Screening",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_published",
+   "fieldtype": "Check",
+   "label": "Is Published"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created By",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "valid_from",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Valid From",
+   "reqd": 1
+  },
+  {
+   "fieldname": "duration_minutes",
+   "fieldtype": "Int",
+   "label": "Duration (Minutes)",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "passing_marks",
+   "fieldtype": "Int",
+   "label": "Passing Marks",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "valid_to",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Valid To",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "total_marks",
+   "fieldtype": "Int",
+   "label": "Total Marks",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "result_visibility",
+   "fieldtype": "Select",
+   "label": "Result Visibility",
+   "options": "Immediate\nAfter Deadline\nManual Release",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_retakes",
+   "fieldtype": "Check",
+   "label": "Allow Retakes"
+  },
+  {
+   "default": "0",
+   "fieldname": "randomise_questions",
+   "fieldtype": "Check",
+   "label": "Randomise Questions"
+  },
+  {
+   "default": "0",
+   "fieldname": "certificate_on_pass",
+   "fieldtype": "Check",
+   "label": "Certificate on Pass"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "proctoring_enabled",
+   "fieldtype": "Check",
+   "label": "Proctoring Enabled"
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "skill_tags",
+   "fieldtype": "Table",
+   "label": "Skill Tags",
+   "options": "Assessment Skill Tag"
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "grade_config",
+   "fieldtype": "Table",
+   "label": "Grade Configuration",
+   "options": "Assessment Grade Config"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "assessment_question",
+   "fieldtype": "Table",
+   "label": "Assessment Questions",
+   "options": "Assessment Question"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-25 16:31:24.825685",
+ "modified_by": "Administrator",
+ "module": "Assessment",
+ "name": "Assessment",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

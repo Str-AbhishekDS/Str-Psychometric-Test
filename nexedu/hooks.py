@@ -10,7 +10,8 @@ app_license = "mit"
 
 
 app_include_js = [
-    "https://cdn.jsdelivr.net/npm/chart.js"
+    "https://cdn.jsdelivr.net/npm/chart.js",
+    "/assets/nexedu/js/path_node_tree.js"
 ]
 
 

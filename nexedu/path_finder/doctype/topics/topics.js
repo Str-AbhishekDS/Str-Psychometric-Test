@@ -1,7 +1,7 @@
 // Copyright (c) 2026, Stride nex and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("Str Psychometric Test Result", {
+// frappe.ui.form.on("Topics", {
 // 	refresh(frm) {
 
 // 	},
