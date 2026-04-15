@@ -10,6 +10,7 @@
   "skill",
   "current_level",
   "ledger_hash",
+  "status",
   "column_break_klru",
   "evidence_count",
   "endorsement_count",
@@ -112,12 +113,18 @@
   {
    "fieldname": "column_break_pmxz",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nVerified\nRejected"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-13 17:35:34.735859",
+ "modified": "2026-04-14 13:15:17.452438",
  "modified_by": "Administrator",
  "module": "Skill Ledger",
  "name": "Student Skill",

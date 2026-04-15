@@ -69,6 +69,7 @@
    "reqd": 1
   },
   {
+   "default": "Today",
    "fieldname": "evidence_date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -130,7 +131,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-14 15:29:30.526567",
+ "modified": "2026-04-14 10:36:13.858796",
  "modified_by": "Administrator",
  "module": "Skill Ledger",
  "name": "Skill Evidence",

@@ -1,43 +1,285 @@
-# Copyright (c) 2026, Stride nex and contributors
-# For license information, please see license.txt
-from nexedu.utils.skill_ledger import create_skill_ledger
+"""
+DocType: Student Skill
+Purpose: Core ledger record linking a Student to a Skill with aggregated counts,
+         verification flags, and a tamper-evident ledger hash.
+"""
 
 import frappe
-from frappe.model.document import Document
 import hashlib
 import json
+from frappe.model.document import Document
+from frappe.utils import today, now_datetime
 
 
 class StudentSkill(Document):
 
+    # ------------------------------------------------------------------
+    # Lifecycle hooks
+    # ------------------------------------------------------------------
+
     def before_save(self):
-        self.generate_ledger_hash()
-
-    def generate_ledger_hash(self):
-
-        evidence = frappe.get_all(
-            "Skill Evidence",
-            filters={"student_skill": self.name},
-            fields=["name", "evidence_date", "verification_status"],
-            order_by="evidence_date asc"
-        )
-
-        data = frappe.as_json(evidence)
-
-        self.ledger_hash = hashlib.sha256(data.encode()).hexdigest()
+        self._set_first_acquired()
+        self._recalculate_counts()
+        self._derive_and_set_status()
+        self._update_ledger_hash()
 
     def after_insert(self):
+        self._create_ledger_event("Self Declared")
 
-        create_skill_ledger(
-            student_skill=self.name,
-            event_type="Self Declared"
+    # ------------------------------------------------------------------
+    # Public helpers (called by child doctypes)
+    # ------------------------------------------------------------------
+
+    def refresh_counts(self):
+        """
+        Re-aggregate evidence & endorsement counts, derive status,
+        recompute hash, then save.
+
+        NOTE: Called by SkillEvidence and SkillEndorsement after they
+        have already used db_set for their own cascade. This path is
+        retained for cases where a full Document.save() is acceptable
+        (e.g. AI assessment, level update).
+        """
+        self._recalculate_counts()
+        self._derive_and_set_status()
+        self._update_ledger_hash()
+        self.save(ignore_permissions=True)
+
+    def mark_ai_verified(self):
+        self.ai_verified = 1
+        self._update_ledger_hash()
+        self.save(ignore_permissions=True)
+        self._create_ledger_event("AI Assessment")
+
+    def update_skill_level(self, new_level: str):
+        old_level = self.current_level
+        self.current_level = new_level
+        self._update_ledger_hash()
+        self.save(ignore_permissions=True)
+        self._create_ledger_event(
+            "Skill Level Updated",
+            comment=f"Level changed from {old_level} to {new_level}",
         )
-        
-    # def on_update(self):
 
-    #     if self.has_value_changed("current_level"):
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
 
-    #         create_skill_ledger(
-    #             student_skill=self.name,
-    #             event_type="Skill Level Updated"
-    #         )
+    def _set_first_acquired(self):
+        if not self.first_acquired:
+            self.first_acquired = today()
+
+    def _recalculate_counts(self):
+        self.evidence_count = frappe.db.count(
+            "Skill Evidence",
+            filters={"student_skill": self.name, "verification_status": "Verified"},
+        )
+        self.endorsement_count = frappe.db.count(
+            "Skill Endorsement",
+            filters={"student_skill": self.name},
+        )
+
+    def _derive_and_set_status(self):
+        """
+        Derives Student Skill status from all linked Skill Evidence rows.
+        Mirrors _derive_student_skill_status() in skill_evidence.py.
+
+          - Any evidence Verified  → "Verified"
+          - All evidence Rejected  → "Rejected"
+          - Otherwise              → "Pending"
+        """
+        rows = frappe.get_all(
+            "Skill Evidence",
+            filters={"student_skill": self.name},
+            fields=["verification_status"],
+            ignore_ifnull=True,
+        )
+        if not rows:
+            self.status = "Pending"
+            return
+        statuses = {r["verification_status"] for r in rows}
+        if "Verified" in statuses:
+            self.status = "Verified"
+        elif statuses == {"Rejected"}:
+            self.status = "Rejected"
+        else:
+            self.status = "Pending"
+
+    def _update_ledger_hash(self):
+        """
+        SHA-256 over the fields that constitute the skill's provenance.
+        Changing any field will produce a different hash — useful for
+        tamper detection when exporting the ledger.
+        `status` is now included so a forged status change breaks the hash.
+        """
+        payload = {
+            "student": self.student,
+            "skill": self.skill,
+            "current_level": self.current_level,
+            "status": self.status,
+            "evidence_count": self.evidence_count,
+            "endorsement_count": self.endorsement_count,
+            "ai_verified": self.ai_verified,
+            "self_declared": self.self_declared,
+        }
+        raw = json.dumps(payload, sort_keys=True)
+        self.ledger_hash = hashlib.sha256(raw.encode()).hexdigest()
+
+    def _create_ledger_event(self, event_type: str, comment: str = ""):
+        frappe.get_doc(
+            {
+                "doctype": "Student Skill Ledger",
+                "student": self.student,
+                "student_skill": self.name,
+                "skill": self.skill,
+                "skill_level": self.current_level,
+                "event_type": event_type,
+                "evidence_count": self.evidence_count,
+                "endorsement_count": self.endorsement_count,
+                "event_time": now_datetime(),
+                "comment": comment,
+            }
+        ).insert(ignore_permissions=True)
+
+
+# ------------------------------------------------------------------
+# Whitelisted API
+# ------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_skill_ledger(student: str) -> dict:
+    """
+    Returns the full skill ledger for a student — used by the dashboard.
+
+    Returns:
+        {
+            "student": ...,
+            "skills": [...],
+            "summary": {
+                "total_skills": int,
+                "ai_verified": int,
+                "mentor_endorsed": int,
+                "industry_endorsed": int,
+                "evidence_items": int,
+                "ledger_integrity": "Verified" | "Tampered"
+            }
+        }
+    """
+    skills = frappe.get_all(
+        "Student Skill",
+        filters={"student": student, "is_public": 1},
+        fields=[
+            "name", "skill", "current_level", "evidence_count",
+            "endorsement_count", "ai_verified", "self_declared",
+            "first_acquired", "last_demonstrated", "ledger_hash",
+        ],
+        order_by="skill asc",
+    )
+
+    # Enrich each skill with category and last evidence date
+    for s in skills:
+        skill_doc = frappe.db.get_value(
+            "Skill", s["skill"], ["skill_category", "skill_name"], as_dict=True
+        )
+        s["skill_name"] = skill_doc.get("skill_name") if skill_doc else s["skill"]
+        s["skill_category"] = skill_doc.get("skill_category") if skill_doc else ""
+
+        # Latest evidence date
+        last_evidence = frappe.db.get_value(
+            "Skill Evidence",
+            filters={"student_skill": s["name"], "verification_status": "Verified"},
+            fieldname="evidence_date",
+            order_by="evidence_date desc",
+        )
+        s["last_demo"] = last_evidence
+
+        # Endorsement breakdown
+        s["mentor_endorsements"] = frappe.db.count(
+            "Skill Endorsement",
+            filters={"student_skill": s["name"], "endorser_role": "Mentor"},
+        )
+        s["industry_endorsements"] = frappe.db.count(
+            "Skill Endorsement",
+            filters={"student_skill": s["name"], "endorser_role": "Industry"},
+        )
+
+        # Integrity check — recompute hash and compare
+        s["integrity"] = _verify_hash(s)
+
+    summary = _build_summary(skills)
+
+    return {"student": student, "skills": skills, "summary": summary}
+
+
+@frappe.whitelist()
+def get_employability_score(student: str) -> int:
+    """
+    Calculates a 0-100 employability score based on skills, verifications,
+    endorsements and evidence depth.
+    """
+    skills = frappe.get_all(
+        "Student Skill",
+        filters={"student": student},
+        fields=["current_level", "evidence_count", "endorsement_count", "ai_verified"],
+    )
+
+    if not skills:
+        return 0
+
+    level_weight = {"Beginner": 1, "Intermediate": 2, "Advanced": 3, "Expert": 4}
+    total = 0
+
+    for s in skills:
+        base = level_weight.get(s["current_level"], 1) * 5
+        evidence_bonus = min(s["evidence_count"] * 3, 15)
+        endorsement_bonus = min(s["endorsement_count"] * 4, 20)
+        ai_bonus = 5 if s["ai_verified"] else 0
+        total += base + evidence_bonus + endorsement_bonus + ai_bonus
+
+    # Normalize to 100
+    max_possible = len(skills) * (20 + 15 + 20 + 5)
+    score = round((total / max_possible) * 100) if max_possible else 0
+    return min(score, 100)
+
+
+# ------------------------------------------------------------------
+# Internal helpers
+# ------------------------------------------------------------------
+
+def _verify_hash(skill_row: dict) -> str:
+    ss = frappe.db.get_value(
+        "Student Skill",
+        skill_row["name"],
+        ["student", "status", "ai_verified", "self_declared"],
+        as_dict=True,
+    )
+    payload = {
+        "student": ss.student if ss else "",
+        "skill": skill_row["skill"],
+        "current_level": skill_row["current_level"],
+        "status": ss.status if ss else "Pending",
+        "evidence_count": skill_row["evidence_count"],
+        "endorsement_count": skill_row["endorsement_count"],
+        "ai_verified": ss.ai_verified if ss else 0,
+        "self_declared": ss.self_declared if ss else 0,
+    }
+    raw = json.dumps(payload, sort_keys=True)
+    expected = hashlib.sha256(raw.encode()).hexdigest()
+    return "Verified" if expected == skill_row.get("ledger_hash") else "Tampered"
+
+
+def _build_summary(skills: list) -> dict:
+    total_evidence = sum(s["evidence_count"] for s in skills)
+    mentor_endorsed = sum(1 for s in skills if s.get("mentor_endorsements", 0) > 0)
+    industry_endorsed = sum(1 for s in skills if s.get("industry_endorsements", 0) > 0)
+    ai_verified = sum(1 for s in skills if s.get("ai_verified"))
+    all_verified = all(s.get("integrity") == "Verified" for s in skills)
+
+    return {
+        "total_skills": len(skills),
+        "ai_verified": ai_verified,
+        "mentor_endorsed": mentor_endorsed,
+        "industry_endorsed": industry_endorsed,
+        "evidence_items": total_evidence,
+        "ledger_integrity": "Verified" if all_verified else "Tampered",
+    }
