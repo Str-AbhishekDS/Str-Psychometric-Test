@@ -154,6 +154,12 @@ app_include_js = [
 # ---------------
 
 # scheduler_events = {
+#     "daily": [
+#         "nexedu.skill_ledger.ai_verification.auto_assess_pending_skills",
+#     ]
+# }
+
+# scheduler_events = {
 # 	"all": [
 # 		"nexedu.tasks.all"
 # 	],
