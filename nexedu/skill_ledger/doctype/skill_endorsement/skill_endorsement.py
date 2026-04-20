@@ -10,6 +10,30 @@ from frappe.utils import now_datetime
 
 
 class SkillEndorsement(Document):
+    
+    
+    def _update_counts(self):
+        if not self.student_skill:
+            return
+
+        evidence_count = frappe.db.count(
+            "Skill Evidence",
+            {"student_skill": self.student_skill}
+        )
+
+        endorsement_count = frappe.db.count(
+            "Skill Endorsement",
+            {"student_skill": self.student_skill}
+        )
+
+        frappe.db.set_value(
+            "Student Skill",
+            self.student_skill,
+            {
+                "evidence_count": evidence_count,
+                "endorsement_count": endorsement_count
+            }
+        )
 
     # ------------------------------------------------------------------
     # Lifecycle hooks
@@ -21,8 +45,9 @@ class SkillEndorsement(Document):
         self._prevent_duplicate()
 
     def after_insert(self):
-        self._create_ledger_event()
-        self._refresh_parent()
+        self._update_counts()        # ✅ update first
+        frappe.db.commit()           # ✅ force DB write
+        self._create_ledger_event()  # ✅ now correct values
 
     # ------------------------------------------------------------------
     # Private helpers

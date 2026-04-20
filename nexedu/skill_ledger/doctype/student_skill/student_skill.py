@@ -267,7 +267,7 @@ def _verify_hash(skill_row: dict) -> str:
     expected = hashlib.sha256(raw.encode()).hexdigest()
     return "Verified" if expected == skill_row.get("ledger_hash") else "Tampered"
 
-
+@frappe.whitelist()
 def _build_summary(skills: list) -> dict:
     total_evidence = sum(s["evidence_count"] for s in skills)
     mentor_endorsed = sum(1 for s in skills if s.get("mentor_endorsements", 0) > 0)
@@ -283,3 +283,29 @@ def _build_summary(skills: list) -> dict:
         "evidence_items": total_evidence,
         "ledger_integrity": "Verified" if all_verified else "Tampered",
     }
+    
+@frappe.whitelist()
+def get_skill_timeline(student_skill: str):
+    if not student_skill:
+        frappe.throw("student_skill is required")
+
+    data = frappe.get_all(
+        "Student Skill Ledger",
+        filters={"student_skill": student_skill},
+        fields=[
+            "event_type",
+            "status",
+            "event_time",
+            "comment",
+            "evidence_count",
+            "endorsement_count"
+        ],
+        order_by="event_time desc"
+    )
+
+    return {
+        "status": "success",
+        "data": data
+    }
+    
+    

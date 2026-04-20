@@ -10,6 +10,28 @@ from frappe.utils import today, now_datetime
 
 
 class SkillEvidence(Document):
+    def _update_counts(self):
+        if not self.student_skill:
+            return
+
+        evidence_count = frappe.db.count(
+            "Skill Evidence",
+            {"student_skill": self.student_skill}
+        )
+
+        endorsement_count = frappe.db.count(
+            "Skill Endorsement",
+            {"student_skill": self.student_skill}
+        )
+
+        frappe.db.set_value(
+            "Student Skill",
+            self.student_skill,
+            {
+                "evidence_count": evidence_count,
+                "endorsement_count": endorsement_count
+            }
+        )
 
     # ------------------------------------------------------------------
     # Lifecycle hooks
@@ -26,20 +48,40 @@ class SkillEvidence(Document):
     #         self.save(ignore_permissions=True)
 
     def after_insert(self):
+        self._update_counts()                     # ✅ direct DB update
+        frappe.db.commit()                        # ✅ ensure DB sync
         self._create_ledger_event("Evidence Added")
-        self._refresh_parent()
 
     def on_update(self):
         self.sync_status_to_parent()
-        if self.verification_status == "Verified":
-            self._update_last_demonstrated()
-            event = "Verification"
-        elif self.verification_status == "Rejected":
-            event = "Verification"
-        else:
+
+        # Only act when status changes
+        if not self.has_value_changed("verification_status"):
             return
 
-        self._create_ledger_event(event)
+        if self.verification_status == "Verified":
+            self._update_last_demonstrated()
+
+        # ✅ Update existing ledger entry instead of creating new one
+        ledger_name = frappe.db.get_value(
+            "Student Skill Ledger",
+            {
+                "reference_doctype": "Skill Evidence",
+                "reference_name": self.name
+            },
+            "name"
+        )
+
+        if ledger_name:
+            frappe.db.set_value(
+                "Student Skill Ledger",
+                ledger_name,
+                {
+                    "status": self.verification_status,
+                    "event_type": "Verification",
+                    "event_time": now_datetime()
+                }
+            )
     
     def sync_status_to_parent(self):
         if not self.student_skill:
@@ -103,12 +145,11 @@ class SkillEvidence(Document):
     def _create_ledger_event(self, event_type: str):
         if not self.student_skill:
             return
-        ss = frappe.db.get_value(
-            "Student Skill",
-            self.student_skill,
-            ["student", "skill", "current_level", "evidence_count", "endorsement_count"],
-            as_dict=True,
-        )
+        ss = frappe.db.sql("""
+            SELECT student, skill, current_level, evidence_count, endorsement_count
+            FROM `tabStudent Skill`
+            WHERE name = %s
+        """, (self.student_skill,), as_dict=True)[0]
         if not ss:
             return
         frappe.get_doc(
@@ -166,22 +207,24 @@ def add_evidence(
 
 
 @frappe.whitelist()
-def verify_evidence(evidence_name: str, status: str, remarks: str = "") -> None:
-    """
-    Verifies or rejects a Skill Evidence record.
-    Caller must have the Skill Verifier role.
-
-    Args:
-        evidence_name: The Skill Evidence document name.
-        status: "Verified" or "Rejected".
-        remarks: Optional remarks from the verifier.
-    """
+def verify_evidence(evidence_name: str, status: str, remarks: str = ""):
     _check_verifier_role()
+
     doc = frappe.get_doc("Skill Evidence", evidence_name)
     doc.verification_status = status
     doc.verified_by = frappe.session.user
     doc.remarks = remarks
     doc.save(ignore_permissions=True)
+
+    return {
+        "status": "success",
+        "message": f"Evidence {status.lower()} successfully",
+        "evidence": {
+            "name": doc.name,
+            "verification_status": doc.verification_status,
+            "verified_by": doc.verified_by
+        }
+    }
 
 
 @frappe.whitelist()

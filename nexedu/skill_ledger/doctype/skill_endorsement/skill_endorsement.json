@@ -11,6 +11,7 @@
   "section_identity",
   "student_skill",
   "endorsed_level",
+  "current_level",
   "col_break_ident1",
   "endorsed_by",
   "endorser_role",
@@ -91,12 +92,19 @@
    "fieldname": "comment",
    "fieldtype": "Text",
    "label": "Comment"
+  },
+  {
+   "fetch_from": "student_skill.current_level",
+   "fieldname": "current_level",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Current Level"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-14 16:29:35.530874",
+ "modified": "2026-04-17 11:19:58.650391",
  "modified_by": "Administrator",
  "module": "Skill Ledger",
  "name": "Skill Endorsement",
