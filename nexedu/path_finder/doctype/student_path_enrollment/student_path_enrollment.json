@@ -24,9 +24,7 @@
   "column_break_ysyk",
   "enrolled_at",
   "target_date",
-  "skill_match_percent",
-  "section_break_mfik",
-  "milestone_progress"
+  "skill_match_percent"
  ],
  "fields": [
   {
@@ -128,16 +126,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_mfik",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "milestone_progress",
-   "fieldtype": "Table",
-   "label": "Milestone Progress",
-   "options": "Student Milestone Progress"
-  },
-  {
    "fieldname": "column_break_gdda",
    "fieldtype": "Column Break"
   },
@@ -150,7 +138,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 16:40:31.597871",
+ "modified": "2026-04-20 17:22:57.736402",
  "modified_by": "Administrator",
  "module": "Path Finder",
  "name": "Student Path Enrollment",

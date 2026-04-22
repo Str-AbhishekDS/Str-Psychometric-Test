@@ -15,6 +15,45 @@ app_include_js = [
 ]
 
 
+# DocType JS overrides
+doctype_js = {
+    "Habit Plan": "public/js/habit_plan_override.js"
+}
+ 
+# Scheduled Tasks
+scheduler_events = {
+    "daily": [
+        "nexedu.habits_builder.tasks.send_morning_nudges",          # 8 AM nudge for today's habits
+        "nexedu.habits_builder.tasks.check_broken_streaks",         # Detect streak breaks overnight
+        "nexedu.habits_builder.tasks.auto_complete_ended_plans",    # Mark plans past end_date as Completed
+    ],
+    "weekly": [
+        "nexedu.habits_builder.tasks.send_weekly_summary",          # Weekly progress email
+    ],
+    "cron": {
+        # Custom reminder nudge at specific times
+        "0 8 * * *": [
+            "nexedu.habits_builder.tasks.send_morning_nudges"
+        ],
+        "0 20 * * *": [
+            "nexedu.habits_builder.tasks.send_evening_checkin"
+        ]
+    }
+}
+ 
+# Fixtures — export these with bench export-fixtures
+fixtures = [
+    {
+        "doctype": "Custom Field",
+        "filters": [["dt", "in", ["Student Profile"]]]
+    }
+]
+ 
+# Website route rules (if you build a custom page)
+website_route_rules = [
+    {"from_route": "/habits", "to_route": "habits"},
+]
+ 
 # Apps
 # ------------------
 
