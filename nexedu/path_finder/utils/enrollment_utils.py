@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from pathfinder.utils.milestone_engine import recalculate_all_milestones
+from nexedu.path_finder.utils.milestone_engine import recalculate_all_milestones
 
 
 @frappe.whitelist()

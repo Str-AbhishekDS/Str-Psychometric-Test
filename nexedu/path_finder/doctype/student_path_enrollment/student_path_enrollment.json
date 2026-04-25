@@ -15,17 +15,16 @@
   "student",
   "career_path",
   "ai_recommended",
-  "current_milestone",
   "column_break_vamx",
-  "current_milestone_order",
   "completion_percent",
+  "current_milestone_order",
   "mentor_assigned",
   "is_prerequisite",
   "column_break_ysyk",
   "enrolled_at",
   "target_date",
   "skill_match_percent",
-  "section_break_mfik",
+  "section_break_twys",
   "milestone_progress"
  ],
  "fields": [
@@ -63,12 +62,6 @@
    "in_list_view": 1,
    "label": "Career Path",
    "options": "Career Path",
-   "reqd": 1
-  },
-  {
-   "fieldname": "current_milestone_order",
-   "fieldtype": "Int",
-   "label": "Current Milestone Order",
    "reqd": 1
   },
   {
@@ -110,12 +103,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "current_milestone",
-   "fieldtype": "Link",
-   "label": "Current Milestone",
-   "options": "Path Milestone"
-  },
-  {
    "default": "0",
    "fieldname": "is_prerequisite",
    "fieldtype": "Check",
@@ -128,7 +115,16 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_mfik",
+   "fieldname": "column_break_gdda",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "triggered_from",
+   "fieldtype": "Data",
+   "label": "triggered_from"
+  },
+  {
+   "fieldname": "section_break_twys",
    "fieldtype": "Section Break"
   },
   {
@@ -138,19 +134,15 @@
    "options": "Student Milestone Progress"
   },
   {
-   "fieldname": "column_break_gdda",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "triggered_from",
-   "fieldtype": "Data",
-   "label": "triggered_from"
+   "fieldname": "current_milestone_order",
+   "fieldtype": "Int",
+   "label": "Current Milestone Order"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 16:40:31.597871",
+ "modified": "2026-04-25 18:11:46.007428",
  "modified_by": "Administrator",
  "module": "Path Finder",
  "name": "Student Path Enrollment",

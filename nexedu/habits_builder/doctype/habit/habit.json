@@ -1,0 +1,124 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{habit_name}-{###}",
+ "creation": "2026-04-21 18:26:47.278604",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "habit_name",
+  "habit_type",
+  "frequency",
+  "custom_days",
+  "column_break_1",
+  "target_duration_min",
+  "linked_skill",
+  "reminder_time",
+  "section_break_computed",
+  "current_streak",
+  "longest_streak",
+  "completion_rate"
+ ],
+ "fields": [
+  {
+   "bold": 1,
+   "fieldname": "habit_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Habit Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "habit_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Habit Type",
+   "options": "Learning\nPhysical\nMindfulness\nNetworking\nBuilding",
+   "reqd": 1
+  },
+  {
+   "default": "Daily",
+   "fieldname": "frequency",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Frequency",
+   "options": "Daily\nWeekdays\nCustom Days",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.frequency == 'Custom Days'",
+   "description": "Comma-separated day abbreviations e.g. Mon,Wed,Fri",
+   "fieldname": "custom_days",
+   "fieldtype": "Data",
+   "label": "Custom Days",
+   "mandatory_depends_on": "eval:doc.frequency == 'Custom Days'"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Minutes per session",
+   "fieldname": "target_duration_min",
+   "fieldtype": "Int",
+   "label": "Target Duration (min)"
+  },
+  {
+   "fieldname": "linked_skill",
+   "fieldtype": "Link",
+   "label": "Linked Skill",
+   "options": "Skill"
+  },
+  {
+   "fieldname": "reminder_time",
+   "fieldtype": "Time",
+   "label": "Reminder Time"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_computed",
+   "fieldtype": "Section Break",
+   "label": "Computed Stats"
+  },
+  {
+   "default": "0",
+   "fieldname": "current_streak",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Current Streak (days)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "longest_streak",
+   "fieldtype": "Int",
+   "label": "Longest Streak (days)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "completion_rate",
+   "fieldtype": "Float",
+   "label": "Completion Rate % (30d)",
+   "precision": "2",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-22 13:50:08.840308",
+ "modified_by": "Administrator",
+ "module": "Habits Builder",
+ "name": "Habit",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
