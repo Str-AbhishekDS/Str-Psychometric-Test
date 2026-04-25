@@ -33,7 +33,7 @@ frappe.ui.form.on("Habit Daily Log", {
             // Auto-fill student if not set
             if (!frm.doc.student) {
                 frappe.session.user && frappe.db.get_value(
-                    "Student Profile",
+                    "Student",
                     { user: frappe.session.user },
                     "name",
                     (r) => r && frm.set_value("student", r.name)

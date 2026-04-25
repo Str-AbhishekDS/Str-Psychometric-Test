@@ -1,67 +1,95 @@
 # Copyright (c) 2026, Stride nex and contributors
 # For license information, please see license.txt
+#
+# nexedu/path_finder/doctype/path_progress_log/path_progress_log.py
+# ─────────────────────────────────────────────────────────────────────────────
+# CORE DESIGN CHANGE:
+#   `self.milestone` now stores the NAME of a child row in
+#   Student Path Enrollment → milestone_progress (e.g. "abc123xyz").
+#   This is the enrollment's child table row — NOT a Path Milestone doctype name.
+#
+#   Each child row IS one milestone. Its idx is the sequence position.
+#   When a PPL is saved:
+#     1. That child row → status = "Completed", completed_at = now
+#     2. current_milestone_order on enrollment → next row's idx
+#     3. Student Skill ledger → updated if row has a skill
+# ─────────────────────────────────────────────────────────────────────────────
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today, now_datetime
+from frappe.utils import now_datetime
 
 
 class PathProgressLog(Document):
     """
-    Path Progress Log — separate doctype for milestone-level logging.
+    Path Progress Log — one document per milestone completion event.
 
-    Lifecycle
-    ─────────
     validate:
-        1. fetch_milestone_order  — sync self.order from Path Milestone
-        2. prevent_duplicate_entry — one log per milestone per enrollment
-        3. enforce_sequential_progress — cannot skip ahead in order
+        1. resolve_milestone_row       — find the child row in enrollment
+        2. prevent_duplicate_entry     — one log per child row per enrollment
+        3. enforce_sequential_progress — idx must match current_milestone_order
 
     on_update:
-        4. update_enrollment_progress — SQL-update the enrollment row
-        5. create_student_skill — add skill to student's ledger
+        4. mark_milestone_complete     — mark child row Completed, advance pointer
+        5. create_or_upgrade_student_skill
     """
 
     def validate(self):
-        self.fetch_milestone_order()
-        self.prevent_duplicate_entry()
-        self.enforce_sequential_progress()
+        self._resolve_milestone_row()
+        self._prevent_duplicate_entry()
+        self._enforce_sequential_progress()
 
     def on_update(self):
-        self.update_enrollment_progress()
-        self.create_student_skill()
+        self._mark_milestone_complete()
+        self._create_or_upgrade_student_skill()
 
     # ══════════════════════════════════════════════════════════════════════════
-    # 1. FETCH MILESTONE ORDER
+    # 1. RESOLVE — load the milestone_progress child row from enrollment
     # ══════════════════════════════════════════════════════════════════════════
 
-    def fetch_milestone_order(self):
+    def _resolve_milestone_row(self):
         """
-        Pulls the order value from Path Milestone and writes it to self.order.
-        Also verifies the milestone belongs to the selected career_path.
+        self.milestone holds the child row `name` from
+        Student Path Enrollment → milestone_progress.
+
+        We load the full enrollment doc, find the matching row by name,
+        and cache it as self._mrow for the other methods to reuse.
         """
-        if not self.milestone:
+        if not self.enrollment or not self.milestone:
+            self._mrow = None
             return
 
-        milestone_order = frappe.db.get_value(
-            "Path Milestone",
-            {"name": self.milestone, "parent": self.career_path},
-            "order",
-        )
+        enr_doc = frappe.get_doc("Student Path Enrollment", self.enrollment)
 
-        if milestone_order is not None:
-            self.order = int(milestone_order)
-        else:
+        target = None
+        for row in enr_doc.milestone_progress:
+            if row.name == self.milestone:
+                target = row
+                break
+
+        if not target:
             frappe.throw(
-                f"Milestone <b>{self.milestone}</b> does not belong to "
-                f"Career Path <b>{self.career_path}</b>."
+                f"Milestone row <b>{self.milestone}</b> was not found in "
+                f"enrollment <b>{self.enrollment}</b>.<br>"
+                "Please select a valid milestone from the dropdown."
             )
 
+        self._mrow     = target
+        self._enr_doc  = enr_doc
+
+        # Sync career_path from enrollment onto the log (in case it wasn't set)
+        if not self.career_path:
+            self.career_path = enr_doc.career_path
+
+        # Write the idx as the `order` field so it is stored on the PPL record
+        # and visible in list/report views as the sequence number.
+        self.order = target.idx
+
     # ══════════════════════════════════════════════════════════════════════════
-    # 2. PREVENT DUPLICATE MILESTONE ENTRY
+    # 2. PREVENT DUPLICATE — one log per child row per enrollment
     # ══════════════════════════════════════════════════════════════════════════
 
-    def prevent_duplicate_entry(self):
+    def _prevent_duplicate_entry(self):
         if not self.enrollment or not self.milestone:
             return
 
@@ -69,26 +97,27 @@ class PathProgressLog(Document):
             "Path Progress Log",
             {
                 "enrollment": self.enrollment,
-                "milestone":  self.milestone,
-                "name":       ["!=", self.name],
+                "milestone" : self.milestone,
+                "name"      : ["!=", self.name or "__new__"],
             },
         )
-
         if duplicate:
+            row_idx = getattr(self._mrow, "idx", "?") if self._mrow else "?"
             frappe.throw(
-                f"Milestone <b>{self.milestone}</b> is already logged "
-                f"for this enrollment. Each milestone can only be logged once."
+                f"A progress log already exists for milestone "
+                f"<b>#{row_idx} — {getattr(self._mrow, 'milestone_title', self.milestone)}</b> "
+                f"in this enrollment."
             )
 
     # ══════════════════════════════════════════════════════════════════════════
     # 3. ENFORCE SEQUENTIAL PROGRESS
     # ══════════════════════════════════════════════════════════════════════════
 
-    def enforce_sequential_progress(self):
-        if not self.enrollment or not self.order:
+    def _enforce_sequential_progress(self):
+        if not self._mrow:
             return
 
-        # If milestone hasn't changed on an existing record, skip re-validation
+        # Skip re-validation when editing a saved record that hasn't changed milestone
         if not self.is_new():
             original_milestone = frappe.db.get_value(
                 "Path Progress Log", self.name, "milestone"
@@ -96,128 +125,155 @@ class PathProgressLog(Document):
             if original_milestone == self.milestone:
                 return
 
-        current_milestone_order = (
+        current_order = int(
             frappe.db.get_value(
                 "Student Path Enrollment",
                 self.enrollment,
                 "current_milestone_order",
-            )
-            or 1
+            ) or 1
         )
 
-        if int(self.order) != int(current_milestone_order):
+        selected_idx = int(self._mrow.idx)
+
+        if selected_idx != current_order:
             frappe.throw(
-                f"Cannot log Milestone Order <b>{self.order}</b>. "
-                f"Please complete Milestone Order <b>{current_milestone_order}</b> first."
+                f"Cannot log milestone <b>#{selected_idx} — {self._mrow.milestone_title}</b>.<br>"
+                f"The current expected milestone is <b>#{current_order}</b>.<br>"
+                "Please complete milestones in sequence."
             )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # 4. UPDATE ENROLLMENT PROGRESS
+    # 4. MARK MILESTONE COMPLETE IN ENROLLMENT
     # ══════════════════════════════════════════════════════════════════════════
 
-    def update_enrollment_progress(self):
-        if not self.enrollment:
-            return
-
-        total = frappe.db.count("Path Milestone", {"parent": self.career_path})
-        if not total:
-            return
-
-        current_order = int(self.order)
-        percent       = round((current_order / total) * 100, 2)
-        next_order    = current_order + 1
-        status        = "Completed" if current_order >= total else "Active"
-
-        # Fetch previous status BEFORE updating (for success stories trigger)
-        previous_status = frappe.db.get_value(
-            "Student Path Enrollment",
-            self.enrollment,
-            "status",
-            cache=False,
-        )
-
-        frappe.db.sql(
-            """
-            UPDATE `tabStudent Path Enrollment`
-            SET
-                current_milestone_order = %s,
-                completion_percent      = %s,
-                status                  = %s,
-                modified                = NOW(),
-                modified_by             = %s
-            WHERE name = %s
-            """,
-            (next_order, percent, status, frappe.session.user, self.enrollment),
-        )
-
-        frappe.db.commit()
-        frappe.clear_cache(doctype="Student Path Enrollment")
-
-        # Trigger success story count if path just completed
-        if status == "Completed" and previous_status != "Completed":
-            self._increment_career_path_success_stories()
-
-        frappe.msgprint(
-            f"Progress → Milestone {current_order}/{total} "
-            f"| {percent}% | Next order: {next_order}",
-            indicator="green",
-            alert=True,
-        )
-
-    def _increment_career_path_success_stories(self):
-        frappe.db.sql(
-            """
-            UPDATE `tabCareer Path`
-            SET success_stories = IFNULL(success_stories, 0) + 1
-            WHERE name = %s
-            """,
-            self.career_path,
-        )
-        frappe.db.commit()
-        frappe.msgprint(
-            f"🎉 Path '<b>{self.career_path}</b>' completed! "
-            "Success stories updated.",
-            indicator="green",
-            alert=True,
-        )
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # 5. CREATE STUDENT SKILL FROM MILESTONE
-    # ══════════════════════════════════════════════════════════════════════════
-
-    def create_student_skill(self):
+    def _mark_milestone_complete(self):
+        """
+        Re-loads the enrollment (on_update runs after save, so we need a fresh load),
+        marks the target child row as Completed,
+        and advances current_milestone_order to the next row's idx.
+        """
         if not self.enrollment or not self.milestone:
             return
 
-        enrollment = frappe.get_doc("Student Path Enrollment", self.enrollment)
-        milestone  = frappe.get_doc("Path Milestone", self.milestone)
+        enr_doc = frappe.get_doc("Student Path Enrollment", self.enrollment)
 
-        skill = milestone.get("skill")
+        # Find the target child row
+        target = None
+        for row in enr_doc.milestone_progress:
+            if row.name == self.milestone:
+                target = row
+                break
+
+        if not target:
+            frappe.log_error(
+                f"PPL {self.name}: could not find milestone row {self.milestone} "
+                f"in enrollment {self.enrollment}",
+                "PathProgressLog._mark_milestone_complete"
+            )
+            return
+
+        # Mark this row complete
+        target.status       = "Completed"
+        target.completed_at = now_datetime()
+        if self.score is not None:
+            target.score = self.score
+        if self.ai_feedback:
+            target.ai_feedback = self.ai_feedback
+
+        # Find and activate the next row
+        completed_idx = target.idx
+        rows_sorted   = sorted(enr_doc.milestone_progress, key=lambda r: r.idx)
+        advanced      = False
+
+        for row in rows_sorted:
+            if row.idx <= completed_idx:
+                continue
+            if row.status not in ("Completed", "Skipped"):
+                row.status                       = "In Progress"
+                enr_doc.current_milestone_order  = row.idx
+                advanced = True
+                break
+
+        if not advanced:
+            # All milestones done
+            enr_doc.status                   = "Completed"
+            enr_doc.current_milestone_order  = completed_idx  # stay at last
+
+        # Recompute completion percent
+        mandatory = [r for r in enr_doc.milestone_progress if getattr(r, "is_mandatory", 1)]
+        done      = sum(1 for r in mandatory if r.status in ("Completed", "Skipped"))
+        enr_doc.completion_percent = round((done / len(mandatory)) * 100, 2) if mandatory else 0.0
+        if enr_doc.completion_percent >= 100:
+            enr_doc.status = "Completed"
+
+        enr_doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        next_idx = enr_doc.current_milestone_order
+        total    = len(enr_doc.milestone_progress)
+        frappe.msgprint(
+            f"✅ Milestone <b>#{completed_idx} — {target.milestone_title}</b> completed!<br>"
+            f"Progress: <b>{done}/{total}</b> ({enr_doc.completion_percent}%)<br>"
+            + (f"Next milestone: <b>#{next_idx}</b>" if advanced else "🎉 All milestones completed!"),
+            indicator="green",
+            alert=True,
+        )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # 5. CREATE / UPGRADE STUDENT SKILL
+    # ══════════════════════════════════════════════════════════════════════════
+
+    def _create_or_upgrade_student_skill(self):
+        """
+        If the completed milestone_progress row has a `skill` field,
+        add or upgrade it in the student's skill ledger.
+        """
+        if not self.enrollment or not self.milestone:
+            return
+
+        # Re-fetch the child row (on_update is post-save, _mrow may be stale)
+        enr_doc = frappe.get_doc("Student Path Enrollment", self.enrollment)
+        target  = next(
+            (r for r in enr_doc.milestone_progress if r.name == self.milestone), None
+        )
+        if not target:
+            return
+
+        skill = getattr(target, "skill", None)
         if not skill:
             return
 
-        already_exists = frappe.db.exists(
+        skill_level = getattr(target, "required_skill_level", None) or "Beginner"
+        student     = enr_doc.student
+
+        from nexedu.path_finder.utils.milestone_engine import level_rank
+
+        existing = frappe.db.get_value(
             "Student Skill",
-            {"student": enrollment.student, "skill": skill},
+            {"student": student, "skill": skill},
+            ["name", "skill_level"],
+            as_dict=True,
         )
-        if already_exists:
-            return
 
-        frappe.get_doc(
-            {
-                "doctype":       "Student Skill",
-                "student":       enrollment.student,
-                "skill":         skill,
+        if existing:
+            if level_rank(skill_level) > level_rank(existing.skill_level):
+                frappe.db.set_value("Student Skill", existing.name, "skill_level", skill_level)
+                frappe.db.commit()
+                frappe.msgprint(
+                    f"Skill '<b>{skill}</b>' upgraded to <b>{skill_level}</b>.",
+                    indicator="blue", alert=True,
+                )
+        else:
+            frappe.get_doc({
+                "doctype"      : "Student Skill",
+                "student"      : student,
+                "skill"        : skill,
+                "skill_level"  : skill_level,
                 "self_declared": 0,
-                "current_level": "Beginner",
-                "is_public":     1,
-            }
-        ).insert(ignore_permissions=True)
-
-        frappe.db.commit()
-
-        frappe.msgprint(
-            f"Skill '<b>{skill}</b>' added to Skill Ledger.",
-            indicator="blue",
-            alert=True,
-        )
+                "is_public"    : 1,
+            }).insert(ignore_permissions=True)
+            frappe.db.commit()
+            frappe.msgprint(
+                f"Skill '<b>{skill}</b>' added to Skill Ledger at <b>{skill_level}</b>.",
+                indicator="blue", alert=True,
+            )

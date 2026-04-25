@@ -8,14 +8,13 @@
  "engine": "InnoDB",
  "field_order": [
   "milestone_title",
-  "milestone_type",
-  "order",
-  "required_skill_level",
-  "is_mandatory",
   "category",
+  "skill",
+  "milestone_type",
+  "required_skill_level",
   "topic",
   "subtopic",
-  "skill",
+  "is_mandatory",
   "column_break_wowp",
   "linked_resource_type",
   "reference_doctype",
@@ -39,12 +38,6 @@
    "label": "Milestone Type",
    "options": "Learn\nBuild\nAssess\nConnect\nApply",
    "reqd": 1
-  },
-  {
-   "fieldname": "order",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Order"
   },
   {
    "fieldname": "linked_resource_type",
@@ -98,7 +91,7 @@
   },
   {
    "fieldname": "topic",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Topic",
@@ -106,7 +99,7 @@
   },
   {
    "fieldname": "subtopic",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Subtopic",
@@ -136,7 +129,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-20 18:02:05.119329",
+ "modified": "2026-04-24 12:47:45.007174",
  "modified_by": "Administrator",
  "module": "Path Finder",
  "name": "Path Milestone",
@@ -145,8 +138,8 @@
  "permissions": [],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
- "sort_field": "order",
- "sort_order": "ASC",
+ "sort_field": "creation",
+ "sort_order": "DESC",
  "states": [],
  "track_changes": 1
 }

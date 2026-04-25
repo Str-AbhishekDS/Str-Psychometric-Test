@@ -12,7 +12,6 @@
   "enrollment",
   "career_path",
   "milestone",
-  "order",
   "column_break_wlqm",
   "ai_feedback",
   "column_break_ypzc",
@@ -45,7 +44,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Milestone",
-   "options": "Path Milestone"
+   "options": "Student Milestone Progress"
   },
   {
    "fieldname": "ai_feedback",
@@ -79,12 +78,6 @@
    "options": "Skill Evidence"
   },
   {
-   "fetch_from": "milestone.order",
-   "fieldname": "order",
-   "fieldtype": "Int",
-   "label": "Order"
-  },
-  {
    "fetch_from": "enrollment.career_path",
    "fieldname": "career_path",
    "fieldtype": "Link",
@@ -96,7 +89,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-24 11:18:49.666996",
+ "modified": "2026-04-25 18:05:02.483581",
  "modified_by": "Administrator",
  "module": "Path Finder",
  "name": "Path Progress Log",

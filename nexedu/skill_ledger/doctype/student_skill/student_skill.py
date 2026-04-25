@@ -307,5 +307,43 @@ def get_skill_timeline(student_skill: str):
         "status": "success",
         "data": data
     }
-    
+
+
+@frappe.whitelist(allow_guest=True)
+def create_student_skill(data):
+    try:
+        if isinstance(data, str):
+            data = frappe.parse_json(data)
+
+        doc = frappe.get_doc({
+            "doctype": "Student Skill",  # replace with actual doctype
+            "student": data.get("student"),
+            "skill": data.get("skill"),
+            "current_level": data.get("current_level"),
+            "ledger_hash": data.get("ledger_hash"),
+            "status": data.get("status"),
+            "evidence_count": data.get("evidence_count"),
+            "endorsement_count": data.get("endorsement_count"),
+            "first_acquired": data.get("first_acquired"),
+            "last_demonstrated": data.get("last_demonstrated"),
+            "self_declared": data.get("self_declared"),
+            "ai_verified": data.get("ai_verified"),
+            "is_public": data.get("is_public"),
+        })
+
+        doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "status": "success",
+            "message": "Record created successfully",
+            "name": doc.name
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Create Student Skill Error")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
     

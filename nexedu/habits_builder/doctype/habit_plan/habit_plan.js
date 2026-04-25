@@ -110,7 +110,8 @@ frappe.ui.form.on("Habit Plan", {
                             }, 4);
 
                             d.hide();
-                            frm.trigger("render_streak_summary");
+                            frm.refresh_field("habits");
+                            // frm.trigger("render_streak_summary");
                         }
                     }
                 });
@@ -123,6 +124,83 @@ frappe.ui.form.on("Habit Plan", {
 
     status(frm) {
         frm.trigger("set_status_indicators");
+    },
+
+     render_streak_summary(frm) {
+        if (frm.is_new() || !frm.doc.student) return;
+ 
+        // Remove any previously rendered summary panel
+        frm.layout.wrapper.find(".habit-streak-summary").remove();
+ 
+        frappe.call({
+            method: "nexedu.habits_builder.api.get_plan_summary",
+            args: { plan_name: frm.doc.name },
+            callback(r) {
+                if (!r.message) return;
+ 
+                const { done, partial, missed, rate, streak, longest_streak } = r.message;
+ 
+                // const html = `
+                //     <div class="habit-streak-summary frappe-card"
+                //          style="margin:8px 0 16px 0; padding:12px 20px;">
+                //         <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:center;">
+                //             <div style="text-align:center;">
+                //                 <div style="font-size:26px;font-weight:700;color:#ff6b35;">
+                //                     🔥 ${streak}
+                //                 </div>
+                //                 <div style="font-size:11px;color:#888;margin-top:2px;">
+                //                     Current Streak
+                //                 </div>
+                //             </div>
+                //             <div style="text-align:center;">
+                //                 <div style="font-size:26px;font-weight:700;color:#fd7e14;">
+                //                     ${longest_streak}
+                //                 </div>
+                //                 <div style="font-size:11px;color:#888;margin-top:2px;">
+                //                     Longest Streak
+                //                 </div>
+                //             </div>
+                //             <div style="width:1px;background:#eee;height:40px;"></div>
+                //             <div style="text-align:center;">
+                //                 <div style="font-size:26px;font-weight:700;color:#28a745;">
+                //                     ${done}
+                //                 </div>
+                //                 <div style="font-size:11px;color:#888;margin-top:2px;">
+                //                     Done (30d)
+                //                 </div>
+                //             </div>
+                //             <div style="text-align:center;">
+                //                 <div style="font-size:26px;font-weight:700;color:#ffa500;">
+                //                     ${partial}
+                //                 </div>
+                //                 <div style="font-size:11px;color:#888;margin-top:2px;">
+                //                     Partial (30d)
+                //                 </div>
+                //             </div>
+                //             <div style="text-align:center;">
+                //                 <div style="font-size:26px;font-weight:700;color:#dc3545;">
+                //                     ${missed}
+                //                 </div>
+                //                 <div style="font-size:11px;color:#888;margin-top:2px;">
+                //                     Missed (30d)
+                //                 </div>
+                //             </div>
+                //             <div style="width:1px;background:#eee;height:40px;"></div>
+                //             <div style="text-align:center;">
+                //                 <div style="font-size:26px;font-weight:700;color:#007bff;">
+                //                     ${rate}%
+                //                 </div>
+                //                 <div style="font-size:11px;color:#888;margin-top:2px;">
+                //                     Completion Rate
+                //                 </div>
+                //             </div>
+                //         </div>
+                //     </div>`;
+ 
+                // // Insert after the form's first section (below plan_name field)
+                // frm.layout.wrapper.find(".form-page").prepend(html);
+            }
+        });
     },
 
     end_date(frm) {

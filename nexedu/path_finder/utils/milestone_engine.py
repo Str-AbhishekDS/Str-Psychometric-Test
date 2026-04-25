@@ -1,287 +1,392 @@
-"""
-nexedu/path_finder/utils/milestone_engine.py
-────────────────────────────────────────────────────────────────────────────
-Central engine for all milestone lifecycle logic in Path Finder.
-
-FIX LOG
-───────
-v2 fixes:
-  - build_milestone_rows_from_path: "milestones" → "path_milestone" (correct
-    child table fieldname from Career Path JSON schema)
-  - recalculate_all_milestones Pass 3: corrected lock logic — every row that
-    is not Completed/Skipped and is not the current row gets locked=1,
-    regardless of its position relative to current.
-"""
+# Copyright (c) 2026, Stride nex and contributors
+# For license information, please see license.txt
+#
+# nexedu/path_finder/utils/milestone_engine.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Core engine for:
+#   1. Building milestone_progress rows (prereqs first, then path milestones)
+#   2. Recalculating all milestone statuses after changes
+#   3. Auto-skipping milestones whose skill the student already has (verified)
+#   4. Fit score calculation for career path suggestions
+# ─────────────────────────────────────────────────────────────────────────────
 
 import frappe
-from frappe.utils import today
+from frappe.utils import now_datetime
 
-LEVEL_ORDER = {
-    "Beginner":     1,
-    "Intermediate": 2,
-    "Advanced":     3,
-    "Expert":       4,
-}
+LEVEL_RANK = {"Beginner": 1, "Intermediate": 2, "Advanced": 3}
 
-STATUS_NOT_STARTED = "Not Started"
-STATUS_IN_PROGRESS = "In Progress"
-STATUS_COMPLETED   = "Completed"
-STATUS_SKIPPED     = "Skipped"
+
+def level_rank(level):
+    return LEVEL_RANK.get(level or "Beginner", 1)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PUBLIC API
+# BUILD MILESTONE ROWS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def build_milestone_rows_from_path(career_path, student=None, order_offset=0):
+    """
+    Returns a list of dicts to be appended into enrollment.milestone_progress.
+
+    Structure:
+        Section 1 — Prerequisite Skills (from Career Path → prerequisite_skills table)
+            One row per prerequisite skill entry (milestone_type = "Learn", is_prereq = 1)
+        Section 2 — Path Milestones (from Career Path → path_milestone child table)
+            Rows sorted by idx
+
+    If student is given, any prereq skill already verified on the student
+    is created with status="Completed" and is_auto_skipped=1.
+
+    Returns list of dicts (NOT frappe document rows — caller does append()).
+    """
+    rows = []
+
+    # ── Get student's verified skills once ───────────────────────────────────
+    student_skill_map = {}
+    if student:
+        student_skills = frappe.get_all(
+            "Student Skill",
+            filters={"student": student},
+            fields=["skill", "current_level", "status"],
+        )
+        student_skill_map = {
+            s.skill: s for s in student_skills
+        }
+
+    # ── SECTION 1: Prerequisite Skills ───────────────────────────────────────
+    prereq_skills = frappe.get_all(
+        "Prerequisite Skills",
+        filters={"parent": career_path, "parentfield": "prerequisite_skills"},
+        fields=["prerequisite_skills", "level", "idx"],
+        order_by="idx asc",
+    )
+
+    for ps in prereq_skills:
+        student_entry  = student_skill_map.get(ps.skill)
+        already_has    = (
+            student_entry
+            and level_rank(student_entry.skill_level) >= level_rank(ps.required_skill_level)
+        )
+        is_verified    = bool(student_entry and student_entry.get("is_verified"))
+
+        status         = "Completed" if (already_has and is_verified) else "Not Started"
+        is_auto_skip   = 1 if (already_has and is_verified) else 0
+
+        rows.append({
+            "milestone_title"   : f"{ps.prerequisite_skills}",
+            "milestone_type"    : "Learn",
+            "is_prereq"         : 1,
+            "is_mandatory"      : 1,
+            "skill"             : ps.skill,
+            "required_skill_level": ps.required_skill_level or "Beginner",
+            "status"            : status,
+            "is_auto_skipped"   : is_auto_skip,
+            "is_lock"           : 0,
+            "completed_at"      : now_datetime() if is_auto_skip else None,
+            "score"             : 100 if is_auto_skip else None,
+            "ai_feedback"       : "Skill already verified — auto-completed." if is_auto_skip else None,
+        })
+
+    # ── SECTION 2: Path Milestones ────────────────────────────────────────────
+    path_milestones = frappe.get_all(
+        "Path Milestone",
+        filters={"parent": career_path, "parentfield": "path_milestone"},
+        fields=[
+            "name", "milestone_title", "milestone_type", "skill",
+            "category", "topic", "subtopic", "required_skill_level",
+            "is_mandatory", "duration_days", "linked_resource",
+            "linked_resource_type", "pass_percentage", "assessment", "idx",
+        ],
+        order_by="idx asc",
+    )
+
+    # Lock first non-prereq milestone if there are incomplete prereqs
+    # (only relevant if any prereq is NOT auto-completed)
+    has_incomplete_prereqs = any(
+        r["status"] != "Completed" for r in rows
+    )
+
+    for i, pm in enumerate(path_milestones):
+        # Check if student already has this milestone's skill
+        student_entry = student_skill_map.get(pm.skill) if pm.skill else None
+        already_has   = (
+            student_entry
+            and pm.skill
+            and level_rank(student_entry.skill_level) >= level_rank(pm.required_skill_level)
+        )
+        is_verified   = bool(student_entry and student_entry.get("is_verified"))
+
+        # Auto-complete if student already has verified skill for this milestone
+        if already_has and is_verified and pm.skill:
+            status       = "Completed"
+            is_auto_skip = 1
+        else:
+            # Lock first path milestone if prereqs are pending
+            status       = "Not Started"
+            is_auto_skip = 0
+
+        rows.append({
+            "milestone_title"     : pm.milestone_title,
+            "milestone_type"      : pm.milestone_type,
+            "is_prereq"           : 0,
+            "is_mandatory"        : pm.is_mandatory if pm.is_mandatory is not None else 1,
+            "skill"               : pm.skill,
+            "required_skill_level": pm.required_skill_level,
+            "category"            : pm.category,
+            "topic"               : pm.topic,
+            "subtopic"            : pm.subtopic,
+            "duration_days"       : pm.duration_days,
+            "linked_resource"     : pm.linked_resource,
+            "linked_resource_type": pm.linked_resource_type,
+            "pass_percentage"     : pm.pass_percentage,
+            "assessment"          : pm.assessment,
+            "status"              : status,
+            "is_auto_skipped"     : is_auto_skip,
+            "is_lock"             : 0,
+            "completed_at"        : now_datetime() if is_auto_skip else None,
+            "score"               : 100 if is_auto_skip else None,
+            "ai_feedback"         : "Skill already verified — auto-completed." if is_auto_skip else None,
+            # Store source milestone name for reference/linking
+            "source_milestone"    : pm.name,
+        })
+
+    return rows
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RECALCULATE ALL MILESTONES
 # ══════════════════════════════════════════════════════════════════════════════
 
 def recalculate_all_milestones(enrollment_doc):
     """
-    Full recalculation pass over enrollment_doc.milestone_progress.
+    After building rows, set the first non-completed row to 'In Progress'
+    and lock any rows that come after incomplete mandatory prerequisites.
 
-    Steps
-    ─────
-    1. Sort rows by milestone_order ascending.
-    2. Auto-skip rows where the student already has the linked skill at or
-       above the required_skill_level.
-    3. Find the FIRST row that is not Completed/Skipped → that is "current".
-    4. Lock ALL rows except: completed, skipped, and current.
-       (This fixes the original bug where rows before current got unlocked.)
-    5. Set "In Progress" on current if it was "Not Started".
-    6. Sync enrollment_doc.current_milestone_order.
-       If no pending row exists → mark enrollment Completed.
+    enrollment_doc: StudentPathEnrollment document (in memory, not yet saved)
     """
-    if not enrollment_doc.milestone_progress:
+    rows = enrollment_doc.milestone_progress
+    if not rows:
         return
 
-    student_skills = get_student_skill_set(enrollment_doc.student)
-    rows = sorted(
-        enrollment_doc.milestone_progress,
-        key=lambda r: int(r.milestone_order or 0),
-    )
-
-    # ── Pass 1: auto-skip ────────────────────────────────────────────────────
+    # Find first non-completed row → set as In Progress
+    found_current = False
     for row in rows:
-        if row.status in (STATUS_COMPLETED, STATUS_SKIPPED):
-            continue
-
-        skill = row.get("linked_skill") or row.get("skill")
-        if not skill:
-            continue
-
-        required_level = row.get("required_skill_level") or "Beginner"
-        required_rank  = LEVEL_ORDER.get(required_level, 1)
-        student_level  = student_skills.get(skill)
-        student_rank   = LEVEL_ORDER.get(student_level, 0) if student_level else 0
-
-        if student_rank >= required_rank:
-            row.status       = STATUS_SKIPPED
-            row.is_skipped   = 1
-            row.is_lock      = 0
-            row.completed_on = row.completed_on or today()
-
-    # ── Pass 2: find current (first non-done row) ────────────────────────────
-    current_row = None
-    for row in rows:
-        if row.status not in (STATUS_COMPLETED, STATUS_SKIPPED):
-            current_row = row
-            break
-
-    # ── Pass 3: apply lock / unlock correctly ────────────────────────────────
-    #
-    #  Rule: a row is UNLOCKED only if it is Completed, Skipped, or Current.
-    #  Everything else is LOCKED.
-    #  This prevents any row "before" current from being accidentally editable
-    #  (edge case: a not-started row before current due to ordering bugs).
-    #
-    for row in rows:
-        if row.status in (STATUS_COMPLETED, STATUS_SKIPPED):
+        if row.status == "Completed":
             row.is_lock = 0
             continue
-
-        if current_row and row.name == current_row.name:
-            # Current milestone: unlock and activate
-            row.is_lock = 0
-            if row.status == STATUS_NOT_STARTED:
-                row.status     = STATUS_IN_PROGRESS
-                row.started_on = row.started_on or today()
+        if not found_current:
+            row.status   = "In Progress"
+            row.is_lock  = 0
+            found_current = True
+            enrollment_doc.current_milestone_order = row.idx
         else:
-            # Every other pending/not-started row → locked
-            row.is_lock = 1
-
-    # ── Pass 4: sync enrollment ──────────────────────────────────────────────
-    if current_row:
-        enrollment_doc.current_milestone_order = int(current_row.milestone_order or 1)
-    else:
-        enrollment_doc.status = STATUS_COMPLETED
+            row.status  = "Not Started"
+            row.is_lock = 0  # unlock all; locking happens per-action
 
 
 def update_milestone_status(row, enrollment_doc):
     """
-    Per-row status enforcement called from StudentPathEnrollment.before_save.
-
-    Rules
-    ─────
-    - Locked rows: silently ignored (no changes allowed).
-    - is_skipped checkbox ticked → force status = Skipped.
-    - Build  milestone completing → must have project_link.
-    - Assess milestone completing → score must be >= pass_percentage.
-    - Apply  milestone completing → review_status must be "Approved".
-    - Sets completed_on when status reaches Completed/Skipped.
+    Called in before_save for each milestone_progress row.
+    Ensures completed_at is set when status → Completed.
     """
-    # Locked rows are read-only
-    if row.is_lock:
-        return
-
-    # is_skipped checkbox → force Skipped status
-    if row.get("is_skipped"):
-        row.status       = STATUS_SKIPPED
-        row.completed_on = row.completed_on or today()
-        return
-
-    # Only enforce rules when marking Completed
-    if row.status != STATUS_COMPLETED:
-        return
-
-    # ── Type-specific rules ───────────────────────────────────────────────────
-    if row.milestone_type == "Build":
-        if not row.get("project_link"):
-            frappe.throw(
-                f"Milestone <b>{row.milestone_title}</b>: "
-                "Please add a Project Link before marking as Completed."
-            )
-
-    elif row.milestone_type == "Assess":
-        score    = float(row.get("score") or 0)
-        pass_pct = float(row.get("pass_percentage") or 50)
-        if score < pass_pct:
-            frappe.throw(
-                f"Milestone <b>{row.milestone_title}</b>: "
-                f"Score {score} is below the required pass percentage {pass_pct}."
-            )
-
-    elif row.milestone_type == "Apply":
-        if row.get("review_status") != "Approved":
-            frappe.throw(
-                f"Milestone <b>{row.milestone_title}</b>: "
-                "Apply milestone must be Approved (check Review Status) before completing."
-            )
-
-    # Set completion timestamp
-    if not row.completed_on:
-        row.completed_on = today()
+    if row.status == "Completed" and not row.completed_at:
+        row.completed_at = now_datetime()
+    if row.status != "Completed":
+        row.completed_at = None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# HELPERS
+# FIT SCORE ENGINE
 # ══════════════════════════════════════════════════════════════════════════════
 
-def get_student_skill_set(student):
-    """Returns {skill_name: current_level} dict for a student."""
-    rows = frappe.db.get_all(
+def calculate_fit_score(student, career_path_name):
+    """
+    Calculates a fit score (0–100) for a student against a career path.
+
+    Scoring formula:
+        - Each skill in path milestones + prerequisite_skills counts as 1 point
+        - Student gets full point if they have the skill at or above required level (verified)
+        - Student gets 0.5 point if they have the skill but below required level
+        - Student gets 0 if skill is missing entirely
+        - Final score = (weighted_match / total_skills) * 100
+
+    Returns dict:
+        {
+            fit_score        : float,
+            matched_count    : int,
+            partial_count    : int,
+            missing_count    : int,
+            total_skills     : int,
+            matched_skills   : list,
+            partial_skills   : list,
+            missing_skills   : list,
+        }
+    """
+    # Get all skills required by this path (prereqs + milestones)
+    skill_requirements = _get_all_path_skills(career_path_name)
+
+    if not skill_requirements:
+        return {
+            "fit_score"    : 100,
+            "matched_count": 0,
+            "partial_count": 0,
+            "missing_count": 0,
+            "total_skills" : 0,
+            "matched_skills": [],
+            "partial_skills": [],
+            "missing_skills": [],
+        }
+
+    # Get student skills
+    student_skills = frappe.get_all(
         "Student Skill",
         filters={"student": student},
-        fields=["skill", "current_level"],
+        fields=["skill", "current_level", "status"],
     )
-    return {r["skill"]: r["current_level"] for r in rows}
+    student_skill_map = {s.skill: s for s in student_skills}
+
+    matched_skills = []
+    partial_skills = []
+    missing_skills = []
+    weighted_score = 0.0
+
+    for skill_name, req in skill_requirements.items():
+        student_entry  = student_skill_map.get(skill_name)
+        required_level = req.get("required_skill_level") or "Beginner"
+
+        if not student_entry:
+            missing_skills.append({
+                "skill"         : skill_name,
+                "required_level": required_level,
+                "current_level" : None,
+                "is_prereq"     : req.get("is_prereq", 0),
+            })
+        elif level_rank(student_entry.skill_level) >= level_rank(required_level):
+            matched_skills.append({
+                "skill"         : skill_name,
+                "required_level": required_level,
+                "current_level" : student_entry.skill_level,
+                "is_verified"   : student_entry.get("is_verified", 0),
+                "is_prereq"     : req.get("is_prereq", 0),
+            })
+            weighted_score += 1.0
+        else:
+            partial_skills.append({
+                "skill"         : skill_name,
+                "required_level": required_level,
+                "current_level" : student_entry.skill_level,
+                "is_prereq"     : req.get("is_prereq", 0),
+            })
+            weighted_score += 0.5
+
+    total      = len(skill_requirements)
+    fit_score  = round((weighted_score / total) * 100, 1) if total else 100
+
+    return {
+        "fit_score"     : fit_score,
+        "matched_count" : len(matched_skills),
+        "partial_count" : len(partial_skills),
+        "missing_count" : len(missing_skills),
+        "total_skills"  : total,
+        "matched_skills": matched_skills,
+        "partial_skills": partial_skills,
+        "missing_skills": missing_skills,
+    }
 
 
-def build_milestone_rows_from_path(career_path_name, order_offset=0):
+def _get_all_path_skills(career_path_name):
     """
-    Fetches Path Milestone rows for a career path and returns a list of dicts
-    ready to append() onto enrollment_doc.milestone_progress.
-
-    FIX: child table fieldname is "path_milestone" (not "milestones").
-         This is the name from the Career Path → Path Milestone JSON schema.
-
-    order_offset: added to each milestone's own order value so prereq
-                  milestones are sequenced before main path milestones.
+    Collects all unique skills from:
+      1. prerequisite_skills child table
+      2. path_milestone child table
+    Returns dict: { skill_name: {required_skill_level, is_prereq} }
+    Using highest required level when a skill appears multiple times.
     """
-    path_doc   = frappe.get_doc("Career Path", career_path_name)
-    # ✅ FIX: correct child table field name from Career Path JSON schema
-    milestones = sorted(
-        path_doc.get("path_milestone") or [],
-        key=lambda m: int(m.order or 0),
+    skill_map = {}
+
+    # Prereq skills
+    prereqs = frappe.get_all(
+        "Prerequisite Skills",
+        filters={"parent": career_path_name, "parentfield": "prerequisite_skills"},
+        fields=["prerequisite_skills", "level"],
     )
-
-    rows = []
-    for m in milestones:
-        rows.append({
-            "milestone":            m.name,
-            "milestone_title":      m.milestone_title,
-            "milestone_order":      int(m.order or 0) + order_offset,
-            "milestone_type":       m.milestone_type,
-            "linked_skill":         m.get("skill"),
-            "required_skill_level": m.get("required_skill_level"),
-            "is_skippable":         m.get("is_skippable") or 0,
-            "assessment":           m.get("assessment"),
-            "pass_percentage":      m.get("pass_percentage") or 50,
-            "status":               STATUS_NOT_STARTED,
-            "is_lock":              1,
-            "is_skipped":           0,
-            "source_path":          career_path_name,
-        })
-    return rows
-
-
-def prepend_prerequisite_milestones(enrollment_doc, prereq_path_names):
-    """
-    Inserts prerequisite path milestones BEFORE the main path milestones
-    in enrollment_doc.milestone_progress, re-sequencing all order numbers.
-
-    prereq_path_names: list of Career Path name strings.
-
-    How ordering works
-    ──────────────────
-    Prereq Path A has milestones with order 1, 2, 3  → stored as 1, 2, 3
-    Prereq Path B has milestones with order 1, 2     → stored as 4, 5
-    Main path milestones with order 1, 2, 3          → stored as 6, 7, 8
-
-    Total prereq rows = 5, so main path rows get +5 offset.
-    """
-    if not prereq_path_names:
-        return
-
-    # ── 1. Build prereq rows with contiguous ordering ────────────────────────
-    prereq_rows    = []
-    current_offset = 0
-    for path_name in prereq_path_names:
-        batch = build_milestone_rows_from_path(path_name, order_offset=current_offset)
-        if batch:
-            current_offset = batch[-1]["milestone_order"]
-        prereq_rows.extend(batch)
-
-    if not prereq_rows:
-        return
-
-    total_prereq = len(prereq_rows)
-
-    # ── 2. Snapshot and re-sequence existing main milestones ─────────────────
-    existing_snapshot = sorted(
-        [
-            {
-                "milestone":            r.milestone,
-                "milestone_title":      r.milestone_title,
-                "milestone_order":      int(r.milestone_order or 0) + total_prereq,
-                "milestone_type":       r.milestone_type,
-                "linked_skill":         r.get("linked_skill"),
-                "required_skill_level": r.get("required_skill_level"),
-                "is_skippable":         r.get("is_skippable") or 0,
-                "assessment":           r.get("assessment"),
-                "pass_percentage":      r.get("pass_percentage") or 50,
-                "status":               r.status,
-                "is_lock":              r.is_lock,
-                "is_skipped":           r.get("is_skipped") or 0,
-                "source_path":          r.get("source_path") or enrollment_doc.career_path,
+    for p in prereqs:
+        if not p.skill:
+            continue
+        existing = skill_map.get(p.skill)
+        if not existing or level_rank(p.required_skill_level) > level_rank(existing["required_skill_level"]):
+            skill_map[p.skill] = {
+                "required_skill_level": p.required_skill_level or "Beginner",
+                "is_prereq"           : 1,
             }
-            for r in enrollment_doc.milestone_progress
+
+    # Path milestone skills
+    milestones = frappe.get_all(
+        "Path Milestone",
+        filters={"parent": career_path_name, "parentfield": "path_milestone"},
+        fields=["skill", "required_skill_level"],
+    )
+    for m in milestones:
+        if not m.skill:
+            continue
+        existing = skill_map.get(m.skill)
+        if not existing or level_rank(m.required_skill_level) > level_rank(existing.get("required_skill_level", "Beginner")):
+            skill_map[m.skill] = {
+                "required_skill_level": m.required_skill_level or "Beginner",
+                "is_prereq"           : existing.get("is_prereq", 0) if existing else 0,
+            }
+
+    return skill_map
+
+
+def get_top_path_suggestions(student, limit=5):
+    """
+    Computes fit scores for ALL published career paths for a student
+    and returns the top N sorted by fit_score descending.
+
+    Returns list of dicts:
+        [{
+            career_path       : str,
+            target_role       : str,
+            difficulty_level  : str,
+            fit_score         : float,
+            matched_count     : int,
+            partial_count     : int,
+            missing_count     : int,
+            total_skills      : int,
+            estimated_duration: int,
+            average_salary    : float,
+        }]
+    """
+    published_paths = frappe.get_all(
+        "Career Path",
+        filters={"published": 1},
+        fields=[
+            "name", "path_name", "target_role", "difficulty_level",
+            "estimated_duration_months", "average_salary_lpa", "success_stories",
         ],
-        key=lambda x: x["milestone_order"],
     )
 
-    # ── 3. Clear and rebuild in correct order ────────────────────────────────
-    enrollment_doc.set("milestone_progress", [])
+    results = []
+    for cp in published_paths:
+        score_data = calculate_fit_score(student, cp.name)
+        results.append({
+            "career_path"       : cp.name,
+            "path_name"         : cp.path_name,
+            "target_role"       : cp.target_role,
+            "difficulty_level"  : cp.difficulty_level,
+            "fit_score"         : score_data["fit_score"],
+            "matched_count"     : score_data["matched_count"],
+            "partial_count"     : score_data["partial_count"],
+            "missing_count"     : score_data["missing_count"],
+            "total_skills"      : score_data["total_skills"],
+            "matched_skills"    : score_data["matched_skills"],
+            "partial_skills"    : score_data["partial_skills"],
+            "missing_skills"    : score_data["missing_skills"],
+            "estimated_duration": cp.estimated_duration_months,
+            "average_salary"    : cp.average_salary_lpa,
+            "success_stories"   : cp.success_stories,
+        })
 
-    for row_data in prereq_rows:
-        enrollment_doc.append("milestone_progress", row_data)
-
-    for row_data in existing_snapshot:
-        enrollment_doc.append("milestone_progress", row_data)
+    results.sort(key=lambda x: x["fit_score"], reverse=True)
+    return results[:limit]

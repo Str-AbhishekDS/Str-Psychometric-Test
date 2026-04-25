@@ -15,10 +15,8 @@
   "skill_level_schema",
   "table_jiaj",
   "section_break_zbqm",
-  "topic",
-  "subtopic",
-  "column_break_blty",
   "recommended_path",
+  "column_break_blty",
   "min_level_achieved",
   "section_notes",
   "is_trending",
@@ -79,18 +77,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "topic",
-   "fieldtype": "Link",
-   "label": "Topic",
-   "options": "Topics"
-  },
-  {
-   "fieldname": "subtopic",
-   "fieldtype": "Link",
-   "label": "Subtopic",
-   "options": "Subtopic"
-  },
-  {
    "fieldname": "recommended_path",
    "fieldtype": "Link",
    "label": "Recommended Path",
@@ -119,7 +105,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-14 12:54:26.717421",
+ "modified": "2026-04-24 12:41:36.406852",
  "modified_by": "Administrator",
  "module": "Skill Ledger",
  "name": "Skill",
