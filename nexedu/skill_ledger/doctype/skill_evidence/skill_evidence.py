@@ -175,7 +175,7 @@ class SkillEvidence(Document):
 # Whitelisted API
 # ------------------------------------------------------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def add_evidence(
     student_skill: str,
     evidence_type: str,
@@ -202,11 +202,11 @@ def add_evidence(
             "verification_status": "Pending",
         }
     )
-    doc.insert()
+    doc.insert(ignore_permissions=True)
     return doc.name
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def verify_evidence(evidence_name: str, status: str, remarks: str = ""):
     _check_verifier_role()
 
@@ -227,7 +227,7 @@ def verify_evidence(evidence_name: str, status: str, remarks: str = ""):
     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_evidence_for_skill(student_skill: str) -> list:
     """Returns all evidence records for a given Student Skill."""
     return frappe.get_all(
