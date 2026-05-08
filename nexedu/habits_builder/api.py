@@ -17,7 +17,7 @@ timedelta = timedelta
 # 1. DASHBOARD / SUMMARY
 # ---------------------------------------------------------------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_student_dashboard(student: str) -> dict:
     """
     Returns full dashboard data for the Habits page.
@@ -33,17 +33,18 @@ def get_student_dashboard(student: str) -> dict:
         "habits": [...habit plan details...]
     }
     """
-    frappe.has_permission("Habit Plan", throw=True)
-    _check_student_access(student)
+    # frappe.has_permission("Habit Plan", throw=True)
+    # _check_student_access(student)
 
     from_date_30 = add_days(today(), -29)
 
     # All logs for last 30 days
     logs = frappe.get_all(
-        "Habit Daily Log",
-        filters={"student": student, "log_date": [">=", from_date_30]},
-        fields=["log_date", "status", "habit"]
-    )
+    "Habit Daily Log",
+    filters={"student": student, "log_date": [">=", from_date_30]},
+    fields=["log_date", "status", "habit"],
+    ignore_permissions=True
+)
 
     # Group logs by date
     log_by_date = {}
@@ -92,13 +93,14 @@ def get_student_dashboard(student: str) -> dict:
         "habits": habits_data
     }
 
-@frappe.whitelist()  
+@frappe.whitelist(allow_guest=True)  
 def _get_active_habits_summary(student: str) -> list:
     """Return all active habit plans with their child habit rows for the dashboard."""
     plans = frappe.get_all(
         "Habit Plan",
         filters={"student": student, "status": "Active"},
-        fields=["name", "plan_name", "status", "start_date", "end_date", "ai_generated"]
+        fields=["name", "plan_name", "status", "start_date", "end_date", "ai_generated"],
+        ignore_permissions=True
     )
     for plan in plans:
         plan["habits"] = frappe.get_all(
@@ -113,7 +115,7 @@ def _get_active_habits_summary(student: str) -> list:
     return plans
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_plan_summary(plan_name: str) -> dict:
     """Returns completion summary for a specific Habit Plan."""
     frappe.has_permission("Habit Plan", throw=True)
@@ -220,7 +222,7 @@ def get_plan_summary(plan_name: str) -> dict:
 #     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def log_daily_habits(student: str, logs) -> dict:
     frappe.has_permission("Habit Daily Log", "create", throw=True)
     _check_student_access(student)
@@ -444,7 +446,7 @@ def log_daily_habits(student: str, logs) -> dict:
     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_log_status(log_name: str, status: str) -> dict:
     """Update status of an existing Habit Daily Log entry."""
     frappe.has_permission("Habit Daily Log", "write", throw=True)
@@ -460,7 +462,7 @@ def update_log_status(log_name: str, status: str) -> dict:
 # 3. HABIT PLAN CRUD
 # ---------------------------------------------------------------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_habit_plan(student: str, plan_name: str, start_date: str,
                       habits: list, linked_path: str = None,
                       end_date: str = None, ai_generated: int = 0) -> dict:
@@ -493,7 +495,7 @@ def create_habit_plan(student: str, plan_name: str, start_date: str,
     return {"plan_name": doc.name, "status": doc.status, "habits_count": len(doc.habits)}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_student_plans(student: str, status: str = None) -> list:
     """Return all Habit Plans for a student, optionally filtered by status."""
     frappe.has_permission("Habit Plan", throw=True)
@@ -523,7 +525,7 @@ def get_student_plans(student: str, status: str = None) -> list:
 # 4. STREAK & ANALYTICS
 # ---------------------------------------------------------------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_habit_streaks(student: str) -> list:
     """
     Returns streak data for every habit across all active plans.
@@ -550,7 +552,7 @@ def get_habit_streaks(student: str) -> list:
     return result
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_habit_history(student: str, habit: str, days: int = 30) -> list:
     """
     Returns daily log history for a specific habit.
@@ -568,7 +570,7 @@ def get_habit_history(student: str, habit: str, days: int = 30) -> list:
     )
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_todays_pending_habits(student: str) -> list:
     """
     Return habits that are scheduled for today but not yet logged.
@@ -582,13 +584,27 @@ def get_todays_pending_habits(student: str) -> list:
         fields=["name"]
     )
 
-    already_logged = set(
-        r.habit for r in frappe.get_all(
-            "Habit Daily Log",
-            filters={"student": student, "log_date": today()},
-            fields=["habit"]
-        )
+    logged_habits = frappe.get_all(
+        "Habit Daily Log",
+        filters={
+            "student": student,
+            "log_date": today()
+        },
+        fields=["habit"]
     )
+
+    already_logged = set()
+
+    for log in logged_habits:
+
+        habit_name = frappe.db.get_value(
+            "Habit",
+            log.habit,
+            "habit_name"
+        )
+
+        if habit_name:
+            already_logged.add(habit_name)
 
     pending = []
     for plan_ref in plans:
@@ -640,10 +656,12 @@ def ai_generate_habit_plan(student: str, path_name: str, learning_goal: str) -> 
 
 def _check_student_access(student: str):
     """Ensure the logged-in user can access data for this student."""
+    
     if frappe.session.user == "Administrator":
         return
-    # Students can only access their own data
-    linked_user = frappe.db.get_value("Student", student, "user")
+
+    linked_user = frappe.db.get_value("Student", student, "email_id")
+
     if linked_user and linked_user != frappe.session.user:
         frappe.throw(_("Access denied."), frappe.PermissionError)
 
@@ -701,7 +719,7 @@ def _get_this_week_progress(student: str, logs: list) -> list:
         week.append({"day": day_name, "date": d, "status": cell_status, "progress": progress})
     return week
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_student_habit_names(student: str) -> list:
     """
     Returns a flat list of habit_name strings from all active Habit Plans
@@ -726,3 +744,78 @@ def get_student_habit_names(student: str) -> list:
         habit_names.extend([r.habit_name for r in rows])
 
     return list(set(habit_names))   # deduplicate in case same habit name in multiple plans
+
+
+@frappe.whitelist(allow_guest=True)
+def complete_habit_plan_status(plan_name: str, habit_name: str, student: str):
+
+    # Check Habit Plan exists
+    habit_plan_name = frappe.db.get_value(
+        "Habit Plan",
+        {
+            "plan_name": plan_name,
+            "student": student
+        },
+        "name"
+    )
+
+    if not habit_plan_name:
+        return {
+            "status": "error",
+            "message": "Habit Plan not found"
+        }
+
+    # Get Habit Plan document
+    plan = frappe.get_doc("Habit Plan", habit_plan_name)
+
+    # Find Habit document name using habit_name field
+    # because Habit DocType uses naming series
+    habit_doc_name = frappe.db.get_value(
+        "Habit",
+        {
+            "habit_name": habit_name
+        },
+        "name"
+    )
+
+    if not habit_doc_name:
+        return {
+            "status": "error",
+            "message": f"Habit not found for habit_name: {habit_name}"
+        }
+
+    # Check habit exists in child table
+    selected_habit = None
+
+    for row in plan.habits:
+
+        # row.habit stores linked Habit document name
+        if row.habit_name == habit_name:
+            selected_habit = row
+            break
+
+    if not selected_habit:
+        return {
+            "status": "error",
+            "message": "Habit not found in Habit Plan"
+        }
+
+    # Create Habit Daily Log
+    log = frappe.get_doc({
+        "doctype": "Habit Daily Log",
+        "habit": habit_doc_name,
+        "student": student,
+        "habit_plan": plan.name,
+        "log_date": today(),
+        "status": "Done"
+    })
+
+    log.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    return {
+        "status": "success",
+        "message": "Habit Daily Log created successfully",
+        "log_name": log.name
+    }
