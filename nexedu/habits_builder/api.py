@@ -819,3 +819,67 @@ def complete_habit_plan_status(plan_name: str, habit_name: str, student: str):
         "message": "Habit Daily Log created successfully",
         "log_name": log.name
     }
+
+@frappe.whitelist(allow_guest=True)
+def delete_habit_plan(plan_name: str, habit_name: str, student: str):
+    
+    # Check Habit Plan exists
+    habit_plan_name = frappe.db.get_value(
+        "Habit Plan",
+        {
+            "plan_name": plan_name,
+            "student": student
+        },
+        "name"
+    )
+
+    if not habit_plan_name:
+        return {
+            "status": "error",
+            "message": "Habit Plan not found"
+        }
+
+    plan = frappe.get_doc("Habit Plan", habit_plan_name)
+
+    habit_doc_name = frappe.db.get_value(
+        "Habit",
+        {
+            "habit_name": habit_name
+        },
+        "name"
+    )
+
+    if not habit_doc_name:
+        return {
+            "status": "error",
+            "message": f"Habit not found for habit_name: {habit_name}"
+        }
+
+    # Check habit exists in child table
+    selected_habit = None
+
+    for row in plan.habits:
+
+        # row.habit stores linked Habit document name
+        if row.habit_name == habit_name:
+            plan.remove(row)
+            selected_habit = row
+            break
+
+    if not selected_habit:
+        return {
+            "status": "error",
+            "message": "Habit not found in Habit Plan"
+        }
+
+    if not plan.habits:
+        plan.delete(ignore_permissions=True)
+    else:
+        plan.save(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Habit Plan '{plan_name}' and all associated habits/logs deleted successfully"
+    }
