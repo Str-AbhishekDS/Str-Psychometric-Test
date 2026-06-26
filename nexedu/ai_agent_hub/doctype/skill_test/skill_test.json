@@ -1,0 +1,122 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-06-24 17:04:00.089209",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "email",
+  "column_break_rfdt",
+  "skill_name",
+  "level",
+  "column_break_nwfq",
+  "score",
+  "status",
+  "column_break_rhuq",
+  "attempts",
+  "naming_series",
+  "section_break_hwpn",
+  "test_result"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_rfdt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "skill_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Skill Name"
+  },
+  {
+   "fieldname": "section_break_hwpn",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "test_result",
+   "fieldtype": "Long Text",
+   "label": "Test Result"
+  },
+  {
+   "fieldname": "column_break_nwfq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Float",
+   "label": "Score %"
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "label": "Level",
+   "options": "\nBeginner\nIntermediate\nAdvanced\nExpert"
+  },
+  {
+   "fetch_from": "student.email_id",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nPass\nFail"
+  },
+  {
+   "fieldname": "attempts",
+   "fieldtype": "Data",
+   "label": "Attempts"
+  },
+  {
+   "fieldname": "column_break_rhuq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "ST-.####"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-24 17:47:30.143558",
+ "modified_by": "Administrator",
+ "module": "AI Agent Hub",
+ "name": "Skill Test",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
