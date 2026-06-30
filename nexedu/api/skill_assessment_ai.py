@@ -1,5 +1,4 @@
 import json
-import uuid
 from pathlib import Path
 from urllib import error, request
 
@@ -7,11 +6,12 @@ import frappe
 from frappe.utils import cint, now_datetime
 
 from nexedu.api.skill_assessment_config import (
-    CACHE_TTL_SECONDS,
     MODEL_NAME,
     OLLAMA_BASE_URL,
     PASS_SCORE,
     QUESTION_COUNT,
+    QUESTION_GENERATION_ATTEMPTS,
+    QUESTION_MAX_TOKENS,
     REQUEST_TIMEOUT_SECONDS,
 )
 
@@ -20,6 +20,17 @@ PROMPTS_FILE = Path(__file__).with_name("skill_assessment_skills.md")
 VALID_LEVELS = {"Beginner", "Intermediate", "Advanced", "Expert"}
 ANSWER_KEYS = {"A": 0, "B": 1, "C": 2, "D": 3}
 QUESTION_TYPES = {"mcq", "short_answer", "long_answer", "problem_solving"}
+QUESTION_TYPE_ALIASES = {
+    "multiple_choice": "mcq",
+    "multiple_choice_question": "mcq",
+    "short": "short_answer",
+    "written_answer": "short_answer",
+    "open_ended": "long_answer",
+    "essay": "long_answer",
+    "coding": "problem_solving",
+    "coding_problem": "problem_solving",
+    "practical": "problem_solving",
+}
 
 
 def _prompt_section(name):
@@ -54,6 +65,7 @@ def _ollama_chat(prompt, system="JSON only.", max_tokens=1200):
             ],
             "stream": False,
             "think": False,
+            "format": "json",
             "options": {"temperature": 0.2, "num_predict": max_tokens},
         }
     ).encode("utf-8")
@@ -101,32 +113,6 @@ def _load_json_value(value, default):
     return value
 
 
-def _cache_key(session_id):
-    return "skill_assessment_session:{0}".format(session_id)
-
-
-def _set_cached_session(session_id, session):
-    cache = frappe.cache()
-    value = json.dumps(session)
-    try:
-        cache.set_value(_cache_key(session_id), value, expires_in_sec=CACHE_TTL_SECONDS)
-    except TypeError:
-        cache.set_value(_cache_key(session_id), value)
-
-
-def _get_cached_session(session_id):
-    if not session_id:
-        return None
-    value = frappe.cache().get_value(_cache_key(session_id))
-    if isinstance(value, bytes):
-        value = value.decode("utf-8")
-    if not value:
-        return None
-    if isinstance(value, str):
-        return json.loads(value)
-    return value
-
-
 def _safe_questions(questions):
     hidden_keys = {"answer", "rubric"}
     return [{key: value for key, value in question.items() if key not in hidden_keys} for question in questions]
@@ -149,14 +135,9 @@ def _normalise_answer(answer, options):
     return ""
 
 
-def _generate_questions(skill, level):
-    prompt = _fill_prompt(
-        _prompt_section("Quiz prompt"),
-        skill=skill,
-        level=level,
-        question_count=QUESTION_COUNT,
-    )
-    data = _parse_json(_ollama_chat(prompt, max_tokens=1400))
+def _normalise_questions(data):
+    if not isinstance(data, dict):
+        raise ValueError("Model response must be a JSON object")
     questions = data.get("questions")
     if not isinstance(questions, list) or len(questions) != QUESTION_COUNT:
         count = len(questions) if isinstance(questions, list) else 0
@@ -164,15 +145,19 @@ def _generate_questions(skill, level):
 
     normalised = []
     for index, item in enumerate(questions, 1):
+        if not isinstance(item, dict):
+            raise ValueError("Model returned an invalid question at index {0}".format(index))
         question_text = item.get("q") or item.get("question") or item.get("text")
         options = item.get("o") or item.get("options") or item.get("choices")
         question_type = str(item.get("type") or item.get("question_type") or "mcq").strip().lower()
         question_type = question_type.replace(" ", "_").replace("-", "_")
+        question_type = QUESTION_TYPE_ALIASES.get(question_type, question_type)
         if question_type not in QUESTION_TYPES:
             question_type = "mcq" if options else "short_answer"
         if options is None:
             options = []
-        answer = _normalise_answer(item.get("a") or item.get("answer") or item.get("correct_answer"), options or [])
+        raw_answer = item.get("a") or item.get("answer") or item.get("correct_answer") or ""
+        answer = _normalise_answer(raw_answer, options or []) if question_type == "mcq" else ""
         rubric = item.get("rubric") or item.get("expected_answer") or item.get("answer_key") or ""
         difficulty = item.get("d") or item.get("difficulty") or "medium"
         if not isinstance(question_text, str) or not isinstance(options, list):
@@ -180,7 +165,10 @@ def _generate_questions(skill, level):
         if question_type == "mcq" and (len(options) != 4 or not answer):
             raise ValueError("Model returned an invalid MCQ at index {0}".format(index))
         if question_type != "mcq" and not str(rubric).strip():
-            raise ValueError("Model returned an invalid question at index {0}".format(index))
+            rubric = str(raw_answer).strip() or (
+                "Evaluate technical correctness, completeness, reasoning, and practical relevance "
+                "for the question. Accept equivalent valid approaches."
+            )
         normalised.append(
             {
                 "index": index,
@@ -196,25 +184,117 @@ def _generate_questions(skill, level):
     return normalised
 
 
-def _answers_to_list(answers, total):
+def _generate_questions(skill, level):
+    prompt = _fill_prompt(
+        _prompt_section("Quiz prompt"),
+        skill=skill,
+        level=level,
+        question_count=QUESTION_COUNT,
+    )
+    last_error = None
+    for attempt in range(QUESTION_GENERATION_ATTEMPTS):
+        try:
+            raw = _ollama_chat(prompt, max_tokens=QUESTION_MAX_TOKENS)
+            return _normalise_questions(_parse_json(raw))
+        except (json.JSONDecodeError, TypeError, ValueError) as exc:
+            last_error = exc
+            if attempt + 1 < QUESTION_GENERATION_ATTEMPTS:
+                continue
+
+    raise ValueError(
+        "Model failed to return valid questions after {0} attempts: {1}".format(
+            QUESTION_GENERATION_ATTEMPTS, last_error
+        )
+    )
+
+
+def _answers_to_list(answers, questions):
     answers = _load_json_value(answers, [])
     if isinstance(answers, dict):
         values = []
-        for index in range(1, total + 1):
-            values.append(answers.get(str(index), answers.get(index, answers.get(index - 1, ""))))
+        for index, question in enumerate(questions, 1):
+            question_text = question.get("question") or ""
+            if question_text in answers:
+                values.append(answers[question_text])
+            else:
+                values.append(answers.get(str(index), answers.get(index, "")))
         return values
     if isinstance(answers, list):
         return answers
     frappe.throw("Answers must be a list or dict.")
 
 
-def _evaluate_written_answer(session, question, selected):
+def _question_type_from_text(question):
+    first_word = question.strip().split(" ", 1)[0].lower()
+    if first_word in {"build", "create", "design", "develop", "implement", "solve", "write"}:
+        return "problem_solving"
+    return "long_answer"
+
+
+def _build_submission(student, skill, level, answers):
+    try:
+        answers = _load_json_value(answers, {})
+    except json.JSONDecodeError:
+        frappe.throw("Answers must be a complete, valid JSON question-to-answer dict.")
+    if not isinstance(answers, dict) or not answers:
+        frappe.throw("Answers must be a non-empty question-to-answer dict.")
+
+    questions = []
+    answer_map = {}
+    for index, (question_text, submitted) in enumerate(answers.items(), 1):
+        question_text = str(question_text or "").strip()
+        if not question_text:
+            frappe.throw("Every submitted answer must include its question text.")
+
+        question_type = _question_type_from_text(question_text)
+        options = []
+        if isinstance(submitted, dict):
+            selected = submitted.get("answer", submitted.get("student_answer", ""))
+            requested_type = str(submitted.get("type") or "").strip().lower().replace("-", "_").replace(" ", "_")
+            requested_type = QUESTION_TYPE_ALIASES.get(requested_type, requested_type)
+            if requested_type in QUESTION_TYPES:
+                question_type = requested_type
+            if isinstance(submitted.get("options"), list):
+                options = [str(option).strip() for option in submitted["options"]]
+        else:
+            selected = submitted
+
+        questions.append(
+            {
+                "index": index,
+                "type": question_type,
+                "question": question_text,
+                "options": options,
+                "answer": "",
+                "rubric": (
+                    "Evaluate technical correctness, completeness, reasoning, and practical relevance. "
+                    "Accept equivalent valid approaches."
+                ),
+                "difficulty": "hard" if level in {"Advanced", "Expert"} else "medium",
+                "source": "submitted",
+            }
+        )
+        answer_map[question_text] = selected
+
+    return {
+        "student": student,
+        "skill": skill,
+        "level": level,
+        "questions": questions,
+        "model": MODEL_NAME,
+    }, answer_map
+
+
+def _evaluate_written_answer(assessment, question, selected):
+    question_text = question["question"]
+    if question.get("options"):
+        question_text = "{0} Options: {1}".format(question_text, "; ".join(question["options"]))
     prompt = _fill_prompt(
         _prompt_section("Evaluation prompt"),
-        skill=session["skill"],
-        level=session["level"],
+        skill=assessment["skill"],
+        level=assessment["level"],
         question_type=question["type"],
-        question=question["question"],
+        question=question_text,
         rubric=question.get("rubric") or "",
         student_answer=selected,
         pass_score=PASS_SCORE,
@@ -232,22 +312,22 @@ def _evaluate_written_answer(session, question, selected):
     }
 
 
-def _score_questions(session, answers):
-    questions = session["questions"]
-    answers = _answers_to_list(answers, len(questions))
+def _score_questions(assessment, answers):
+    questions = assessment["questions"]
+    answers = _answers_to_list(answers, questions)
     if len(answers) != len(questions):
         frappe.throw("Expected {0} answers.".format(len(questions)))
 
     breakdown = []
     for question, answer in zip(questions, answers):
         selected = str(answer or "").strip()
-        if question.get("type") == "mcq":
-            selected = selected.upper()
+        if question.get("type") == "mcq" and question.get("answer"):
+            selected = _normalise_answer(selected, question.get("options") or [])
             answer_score = 100 if selected == question["answer"] else 0
             correct = answer_score == 100
             evaluation_comment = ""
         else:
-            evaluation = _evaluate_written_answer(session, question, selected)
+            evaluation = _evaluate_written_answer(assessment, question, selected)
             answer_score = evaluation["answer_score"]
             correct = evaluation["is_correct"]
             evaluation_comment = evaluation["evaluation_comment"]
@@ -279,8 +359,8 @@ def _score_questions(session, answers):
     }
 
 
-def _result_feedback(session, scores):
-    questions = session["questions"]
+def _result_feedback(assessment, scores):
+    questions = assessment["questions"]
     correct_topics = "; ".join(
         question["question"] for question, result in zip(questions, scores["breakdown"]) if result["is_correct"]
     ) or "none"
@@ -289,7 +369,7 @@ def _result_feedback(session, scores):
     ) or "none"
     prompt = _fill_prompt(
         _prompt_section("Result prompt"),
-        skill=_skill_prompt_name(session["skill"], session["level"]),
+        skill=_skill_prompt_name(assessment["skill"], assessment["level"]),
         score=scores["score"],
         correct=scores["total_correct"],
         total=scores["total_questions"],
@@ -307,22 +387,21 @@ def _student_exists(student):
         frappe.throw("Student not found: {0}".format(student))
 
 
-def _store_skill_test(session, scores, feedback, answers):
-    answer_list = _answers_to_list(answers, len(session["questions"]))
+def _store_skill_test(assessment, scores, feedback, answers):
+    answer_list = _answers_to_list(answers, assessment["questions"])
     question_type_counts = {}
-    for question in session["questions"]:
+    for question in assessment["questions"]:
         question_type = question.get("type") or "question"
         question_type_counts[question_type] = question_type_counts.get(question_type, 0) + 1
 
     test_result = {
         "attempt": {
-            "session_id": session.get("session_id"),
             "submitted_at": str(now_datetime()),
             "model": MODEL_NAME,
-            "student": session["student"],
-            "skill": session["skill"],
-            "level": session["level"],
-            "question_count": len(session["questions"]),
+            "student": assessment["student"],
+            "skill": assessment["skill"],
+            "level": assessment["level"],
+            "question_count": len(assessment["questions"]),
             "question_type_counts": question_type_counts,
         },
         "result": {
@@ -335,19 +414,23 @@ def _store_skill_test(session, scores, feedback, answers):
         },
         "ai_response": feedback,
         "student_answers": answer_list,
-        "questions": session["questions"],
+        "questions": assessment["questions"],
         "evaluation_breakdown": scores["breakdown"],
     }
     attempts = frappe.db.count(
         "Skill Test",
-        filters={"student": session["student"], "skill_name": session["skill"], "level": session["level"]},
+        filters={
+            "student": assessment["student"],
+            "skill_name": assessment["skill"],
+            "level": assessment["level"],
+        },
     )
     doc = frappe.get_doc(
         {
             "doctype": "Skill Test",
-            "student": session["student"],
-            "skill_name": session["skill"],
-            "level": session["level"],
+            "student": assessment["student"],
+            "skill_name": assessment["skill"],
+            "level": assessment["level"],
             "score": scores["score"],
             "status": scores["verification_status"],
             "attempts": cint(attempts) + 1,
@@ -375,19 +458,8 @@ def get_skill_test_questions(student=None, skill=None, level=None):
         frappe.log_error(frappe.get_traceback(), "Skill Assessment Question Error")
         frappe.throw("Could not generate skill test questions: {0}".format(exc))
 
-    session_id = str(uuid.uuid4())
-    session = {
-        "session_id": session_id,
-        "student": student,
-        "skill": skill,
-        "level": level,
-        "questions": questions,
-        "model": MODEL_NAME,
-    }
-    _set_cached_session(session_id, session)
     safe_questions = _safe_questions(questions)
     return {
-        "session_id": session_id,
         "name": student,
         "skill": skill,
         "level": level,
@@ -397,28 +469,20 @@ def get_skill_test_questions(student=None, skill=None, level=None):
 
 
 @frappe.whitelist()
-def submit_skill_test_answers(session_id=None, student=None, skill=None, level=None, answers=None, questions=None):
-    session = _get_cached_session(session_id)
+def submit_skill_test_answers(student=None, skill=None, level=None, answers=None):
+    student = (student or "").strip()
+    skill = (skill or "").strip()
+    level = _normalise_level(level)
+    if not student:
+        frappe.throw("Student is required.")
+    if not skill:
+        frappe.throw("Skill is required.")
+    _student_exists(student)
+    assessment, answers = _build_submission(student, skill, level, answers)
 
-    if not session:
-        student = (student or "").strip()
-        skill = (skill or "").strip()
-        level = _normalise_level(level)
-        questions = _load_json_value(questions, [])
-        if not student or not skill or not questions:
-            frappe.throw("Invalid or expired skill test session.")
-        session = {
-            "session_id": session_id,
-            "student": student,
-            "skill": skill,
-            "level": level,
-            "questions": questions,
-            "model": MODEL_NAME,
-        }
-
-    scores = _score_questions(session, answers)
+    scores = _score_questions(assessment, answers)
     try:
-        feedback = _result_feedback(session, scores)
+        feedback = _result_feedback(assessment, scores)
     except (RuntimeError, ValueError, json.JSONDecodeError):
         frappe.log_error(frappe.get_traceback(), "Skill Assessment Feedback Error")
         feedback = {
@@ -429,12 +493,13 @@ def submit_skill_test_answers(session_id=None, student=None, skill=None, level=N
             "status": "verified" if scores["passed"] else "not_verified",
         }
 
-    skill_test = _store_skill_test(session, scores, feedback, answers)
+    skill_test = _store_skill_test(assessment, scores, feedback, answers)
     return {
         "skill_test": skill_test,
-        "name": session["student"],
-        "skill": session["skill"],
-        "level": session["level"],
+        "name": assessment["student"],
+        "student": assessment["student"],
+        "skill": assessment["skill"],
+        "level": assessment["level"],
         "score": scores["score"],
         "status": scores["verification_status"],
         "verification_status": "verified" if scores["passed"] else "not_verified",
@@ -443,6 +508,14 @@ def submit_skill_test_answers(session_id=None, student=None, skill=None, level=N
         "total_correct": scores["total_correct"],
         "total_questions": scores["total_questions"],
         "feedback": feedback,
+        "question_answers": [
+            {
+                "question": item["question"],
+                "answer": item["selected_answer"],
+                "type": item["type"],
+            }
+            for item in scores["breakdown"]
+        ],
         "breakdown": scores["breakdown"],
     }
 
@@ -453,12 +526,10 @@ def start_skill_test(student=None, skill=None, level=None):
 
 
 @frappe.whitelist()
-def submit_skill_test(session_id=None, student=None, skill=None, level=None, answers=None, questions=None):
+def submit_skill_test(student=None, skill=None, level=None, answers=None):
     return submit_skill_test_answers(
-        session_id=session_id,
         student=student,
         skill=skill,
         level=level,
         answers=answers,
-        questions=questions,
     )
