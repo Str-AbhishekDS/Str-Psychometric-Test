@@ -24,7 +24,8 @@ class StudentPathEnrollment(Document):
     def before_insert(self):
         self.enrolled_at             = now_datetime()
         # self.current_milestone_order = 1
-        self.status                  = "Active"
+        if self.status != "Generating":
+            self.status              = "Active"
 
     def after_insert(self):
         """
@@ -41,6 +42,9 @@ class StudentPathEnrollment(Document):
         The combined count (prereq rows + path milestone rows) is the total
         shown in the UI as "4 Prereqs + 11 Milestones = 15 Total".
         """
+        if self.status == "Generating":
+            return
+
         if not self.milestone_progress:
             self._populate_milestones_from_path()
 
@@ -53,7 +57,21 @@ class StudentPathEnrollment(Document):
         """
         On every save: enforce per-row rules, recompute percent.
         """
-        if not self.milestone_progress:
+        if self.status == "Active":
+            other_active = frappe.get_all(
+                "Student Path Enrollment",
+                filters={
+                    "student": self.student,
+                    "status": "Active",
+                    "name": ["!=", self.name or ""]
+                },
+                fields=["name"]
+            )
+            for other in other_active:
+                frappe.db.set_value("Student Path Enrollment", other.name, "status", "Paused")
+                frappe.clear_document_cache("Student Path Enrollment", other.name)
+
+        if self.status == "Generating" or not self.milestone_progress:
             return
 
         for row in self.milestone_progress:
@@ -65,6 +83,18 @@ class StudentPathEnrollment(Document):
         self._check_and_update_success_stories()
 
     def validate(self):
+        # Enforce milestone skill uniqueness to prevent duplication
+        seen_skills = set()
+        for row in self.milestone_progress:
+            if row.skill:
+                skill_key = row.skill.lower().strip()
+                if skill_key in seen_skills:
+                    frappe.throw(
+                        f"Duplicate milestone skill '<b>{row.skill}</b>' found in progress. "
+                        f"Each skill must have exactly one milestone per enrollment path."
+                    )
+                seen_skills.add(skill_key)
+
         for row in self.milestone_progress:
             if getattr(row, "is_lock", 0) and row.has_value_changed("status"):
                 frappe.throw(
@@ -125,6 +155,29 @@ class StudentPathEnrollment(Document):
         )
         for row_data in rows:
             self.append("milestone_progress", row_data)
+
+        # Populate milestone checklist points from template
+        self.milestone_points = []
+        path_milestones = frappe.get_all(
+            "Path Milestone",
+            filters={"parent": self.career_path, "parentfield": "path_milestone"},
+            fields=["milestone_title", "milestone_points"]
+        )
+        pm_map = {pm.milestone_title: pm.milestone_points for pm in path_milestones if pm.milestone_points}
+
+        for row in self.milestone_progress:
+            pm_points_text = pm_map.get(row.milestone_title)
+            if not pm_points_text:
+                continue
+
+            points = [p.strip() for p in pm_points_text.split("\n") if p.strip()]
+            point_status = "Completed" if row.status == "Completed" else "Not Started"
+            for p in points:
+                self.append("milestone_points", {
+                    "milestone_title": row.milestone_title,
+                    "point_title": p,
+                    "status": point_status
+                })
 
     def _check_and_update_success_stories(self):
         previous_status = frappe.db.get_value(

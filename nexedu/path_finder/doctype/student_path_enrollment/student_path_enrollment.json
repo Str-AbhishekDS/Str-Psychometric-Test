@@ -25,7 +25,8 @@
   "target_date",
   "skill_match_percent",
   "section_break_twys",
-  "milestone_progress"
+  "milestone_progress",
+  "milestone_points"
  ],
  "fields": [
   {
@@ -40,7 +41,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Active\nPaused\nCompleted\nAbandoned",
+   "options": "Active\nPaused\nCompleted\nAbandoned\nGenerating",
    "reqd": 1
   },
   {
@@ -137,6 +138,12 @@
    "fieldname": "current_milestone_order",
    "fieldtype": "Int",
    "label": "Current Milestone Order"
+  },
+  {
+   "fieldname": "milestone_points",
+   "fieldtype": "Table",
+   "label": "Milestone Points Progress",
+   "options": "Student Milestone Point"
   }
  ],
  "grid_page_length": 50,

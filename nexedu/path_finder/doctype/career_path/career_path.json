@@ -19,7 +19,6 @@
   "column_break_zdaf",
   "success_stories",
   "average_salary_lpa",
-  "created_by",
   "section_break_fvil",
   "prerequisite_skills",
   "path_milestone",
@@ -101,14 +100,6 @@
    "label": "Average Salary (lpa)"
   },
   {
-   "fieldname": "created_by",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Created By",
-   "options": "User",
-   "reqd": 1
-  },
-  {
    "default": "0",
    "fieldname": "published",
    "fieldtype": "Check",
@@ -130,8 +121,8 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-24 14:15:21.422982",
- "modified_by": "Administrator",
+ "modified": "2026-07-10 15:53:52.597395",
+ "modified_by": "abhisheksadale96@gmail.com",
  "module": "Path Finder",
  "name": "Career Path",
  "naming_rule": "By fieldname",

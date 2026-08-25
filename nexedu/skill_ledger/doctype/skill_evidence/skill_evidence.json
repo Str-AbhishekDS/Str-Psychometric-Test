@@ -23,7 +23,10 @@
   "document_url",
   "section_notes",
   "description",
-  "remarks"
+  "remarks",
+  "allocated_mentor",
+  "allocation_method",
+  "allocation_status"
  ],
  "fields": [
   {
@@ -42,7 +45,7 @@
    "fieldname": "evidence_type",
    "fieldtype": "Select",
    "label": "Evidence Type",
-   "options": "Course\nProject\nInternship\nAssessment\nCertification\nHackathon\nMentor Endorsement",
+   "options": "\nProject\nCertification\nWork Experience\nCompetition\nOther",
    "reqd": 1
   },
   {
@@ -59,6 +62,28 @@
    "in_list_view": 1,
    "label": "Verified By",
    "options": "User"
+  },
+  {
+   "fieldname": "allocated_mentor",
+   "fieldtype": "Link",
+   "label": "Allocated Mentor",
+   "options": "Mentor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "allocation_method",
+   "fieldtype": "Select",
+   "label": "Allocation Method",
+   "options": "\nSession Mentor\nAuto Assigned\nAny Mentor",
+   "read_only": 1
+  },
+  {
+   "default": "Not Allocated",
+   "fieldname": "allocation_status",
+   "fieldtype": "Select",
+   "label": "Allocation Status",
+   "options": "\nNot Allocated\nAllocated",
+   "read_only": 1
   },
   {
    "fieldname": "verification_status",
@@ -84,7 +109,8 @@
   {
    "fieldname": "document_url",
    "fieldtype": "Attach",
-   "label": "Evidence Document"
+   "label": "Evidence Document",
+   "reqd": 1
   },
   {
    "fieldname": "section_notes",
@@ -131,8 +157,8 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-14 10:36:13.858796",
- "modified_by": "Administrator",
+ "modified": "2026-08-12 11:16:18.130287",
+ "modified_by": "abhisheksadale96@gmail.com",
  "module": "Skill Ledger",
  "name": "Skill Evidence",
  "naming_rule": "By \"Naming Series\" field",
@@ -158,6 +184,18 @@
    "report": 1,
    "role": "All",
    "share": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Skill Verifier",
+   "share": 1,
+   "write": 1
   }
  ],
  "row_format": "Dynamic",

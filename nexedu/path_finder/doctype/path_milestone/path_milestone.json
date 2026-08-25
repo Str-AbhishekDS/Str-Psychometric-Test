@@ -12,8 +12,6 @@
   "skill",
   "milestone_type",
   "required_skill_level",
-  "topic",
-  "subtopic",
   "is_mandatory",
   "column_break_wowp",
   "linked_resource_type",
@@ -21,7 +19,9 @@
   "linked_resource",
   "duration_days",
   "pass_percentage",
-  "assessment"
+  "assessment",
+  "is_completed",
+  "milestone_points"
  ],
  "fields": [
   {
@@ -67,6 +67,8 @@
   {
    "fieldname": "duration_days",
    "fieldtype": "Int",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Duration (Days)"
   },
   {
@@ -90,22 +92,6 @@
    "options": "Skill Category"
   },
   {
-   "fieldname": "topic",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Topic",
-   "options": "Topics"
-  },
-  {
-   "fieldname": "subtopic",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Subtopic",
-   "options": "Subtopic"
-  },
-  {
    "fieldname": "skill",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -123,14 +109,25 @@
    "fieldtype": "Link",
    "label": "Assessment",
    "options": "Assessment"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_completed",
+   "fieldtype": "Check",
+   "label": "Is Completed"
+  },
+  {
+   "fieldname": "milestone_points",
+   "fieldtype": "Small Text",
+   "label": "Milestone Points (Newline-separated)"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-24 12:47:45.007174",
- "modified_by": "Administrator",
+ "modified": "2026-07-01 18:56:00.825207",
+ "modified_by": "abhisheksadale96@gmail.com",
  "module": "Path Finder",
  "name": "Path Milestone",
  "naming_rule": "Autoincrement",

@@ -87,14 +87,13 @@
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
-   "label": "Series",
-   "options": "ST-.####"
+   "label": "Series"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-24 17:47:30.143558",
+ "modified": "2026-06-29 12:50:46.153982",
  "modified_by": "Administrator",
  "module": "AI Agent Hub",
  "name": "Skill Test",

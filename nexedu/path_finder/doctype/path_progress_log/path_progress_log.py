@@ -36,8 +36,52 @@ class PathProgressLog(Document):
 
     def validate(self):
         self._resolve_milestone_row()
+        self._check_milestone_points_completion()
+        self._enforce_skill_assessment_verification()
         self._prevent_duplicate_entry()
         self._enforce_sequential_progress()
+
+    def _check_milestone_points_completion(self):
+        if not self._mrow or not self._enr_doc:
+            return
+
+        # Check if there are checklist points for this milestone
+        points = [p for p in getattr(self._enr_doc, "milestone_points", []) if p.milestone_title == self._mrow.milestone_title]
+        if points and not all(p.status == "Completed" for p in points):
+            incomplete = [p.point_title for p in points if p.status != "Completed"]
+            frappe.throw(
+                f"Cannot complete milestone <b>{self._mrow.milestone_title}</b>. "
+                f"The following checklist points are not completed yet:<br>"
+                f"<ul>" + "".join(f"<li>{p}</li>" for p in incomplete) + "</ul>"
+            )
+
+    def _enforce_skill_assessment_verification(self):
+        if not self._mrow or not self._enr_doc:
+            return
+
+        skill = getattr(self._mrow, "skill", None)
+        if not skill:
+            return
+
+        # Check if the student has a verified Student Skill for this milestone's skill
+        try:
+            from job_search_ai.services.skill_gap.normalizer import normalize_skill
+            norm_skill = normalize_skill(skill)
+        except Exception:
+            norm_skill = skill
+
+        is_verified = frappe.db.exists(
+            "Student Skill",
+            {
+                "student": self._enr_doc.student,
+                "skill": norm_skill,
+                "ai_verified": 1
+            }
+        )
+        if not is_verified:
+            frappe.throw(
+                f"Cannot complete milestone <b>{self._mrow.milestone_title}</b> without passing the AI Skill Assessment for <b>{skill}</b>."
+            )
 
     def on_update(self):
         self._mark_milestone_complete()
@@ -243,6 +287,13 @@ class PathProgressLog(Document):
         if not skill:
             return
 
+        # Canonicalize skill name
+        try:
+            from job_search_ai.services.skill_gap.normalizer import normalize_skill
+            canonical_skill = normalize_skill(skill)
+        except Exception:
+            canonical_skill = skill
+
         skill_level = getattr(target, "required_skill_level", None) or "Beginner"
         student     = enr_doc.student
 
@@ -250,30 +301,40 @@ class PathProgressLog(Document):
 
         existing = frappe.db.get_value(
             "Student Skill",
-            {"student": student, "skill": skill},
+            {"student": student, "skill": canonical_skill},
             ["name", "current_level"],
             as_dict=True,
         )
 
         if existing:
-            if level_rank(skill_level) > level_rank(existing.current_level):
-                frappe.db.set_value("Student Skill", existing.name, "current_level", skill_level)
+            doc = frappe.get_doc("Student Skill", existing.name)
+            changed = False
+            if not doc.ai_verified:
+                doc.ai_verified = 1
+                changed = True
+            if level_rank(skill_level) > level_rank(doc.current_level):
+                doc.current_level = skill_level
+                changed = True
+            
+            if changed:
+                doc.save(ignore_permissions=True)
                 frappe.db.commit()
                 frappe.msgprint(
-                    f"Skill '<b>{skill}</b>' upgraded to <b>{skill_level}</b>.",
+                    f"Skill '<b>{canonical_skill}</b>' upgraded to <b>{doc.current_level}</b>.",
                     indicator="blue", alert=True,
                 )
         else:
             frappe.get_doc({
                 "doctype"      : "Student Skill",
                 "student"      : student,
-                "skill"        : skill,
+                "skill"        : canonical_skill,
                 "current_level": skill_level,
                 "self_declared": 0,
+                "ai_verified"  : 1,
                 "is_public"    : 1,
             }).insert(ignore_permissions=True)
             frappe.db.commit()
             frappe.msgprint(
-                f"Skill '<b>{skill}</b>' added to Skill Ledger at <b>{skill_level}</b>.",
+                f"Skill '<b>{canonical_skill}</b>' added to Skill Ledger at <b>{skill_level}</b>.",
                 indicator="blue", alert=True,
             )

@@ -10,8 +10,9 @@ class Habit(Document):
         if self.frequency == "Custom Days" and not self.custom_days:
             frappe.throw(f"Please specify custom days for habit '{self.habit_name}'.")
 
-    def is_due_today(self):
-        day_abbr = getdate(today()).strftime("%a")
+    def is_due_today(self, date_ref=None):
+        ref_date = getdate(date_ref) if date_ref else getdate(today())
+        day_abbr = ref_date.strftime("%a")
         if self.frequency == "Daily":
             return True
         if self.frequency == "Weekdays":
@@ -24,7 +25,11 @@ class Habit(Document):
     def compute_streak(self, student):
         logs = frappe.get_all(
             "Habit Daily Log",
-        
+            filters={
+                "student": student,
+                "habit": self.name,
+                "status": "Done"
+            },
             fields=["log_date"],
             order_by="log_date desc"
         )
@@ -96,7 +101,7 @@ class Habit(Document):
         done_count = frappe.db.count(
             "Habit Daily Log",
             {
-                "habit": self.habit_name,
+                "habit": self.name,
                 "student": student,
                 "status": "Done",
                 "log_date": [">=", from_date]

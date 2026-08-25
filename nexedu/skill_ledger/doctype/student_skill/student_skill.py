@@ -16,6 +16,10 @@ class StudentSkill(Document):
     # ------------------------------------------------------------------
     # Lifecycle hooks
     # ------------------------------------------------------------------
+    def on_update(self):
+        # Only send verification email when self_declared is newly set to 1
+        if self.has_value_changed("self_declared") and self.self_declared:
+            self.send_verification_email()
 
     def before_save(self):
         self._set_first_acquired()
@@ -25,6 +29,7 @@ class StudentSkill(Document):
 
     def after_insert(self):
         self._create_ledger_event("Self Declared")
+        self.send_verification_email()  # send once on creation
 
     # ------------------------------------------------------------------
     # Public helpers (called by child doctypes)
@@ -88,6 +93,10 @@ class StudentSkill(Document):
           - All evidence Rejected  → "Rejected"
           - Otherwise              → "Pending"
         """
+        if self.ai_verified:
+            self.status = "Verified"
+            return
+
         rows = frappe.get_all(
             "Skill Evidence",
             filters={"student_skill": self.name},
@@ -140,106 +149,311 @@ class StudentSkill(Document):
                 "comment": comment,
             }
         ).insert(ignore_permissions=True)
+        
+    def send_verification_email(self):
+        # Skip if already verified
+        if self.ai_verified:
+            return
+
+        student_email = frappe.db.get_value("Student", self.student, "email_id")
+        if not student_email:
+            frappe.log_error(
+                title="Student Skill AI Verification Mail",
+                message=f"No email found for student {self.student} (Student Skill: {self.name})"
+            )
+            return
+
+        skill_name = frappe.db.get_value("Skill", self.skill, "skill_name") or self.skill
+        # record_url = get_url(f"/app/student-skill/{self.name}")
+
+        subject = ("Action Required: Verify your skill - {0}").format(skill_name)
+
+        message = f"""
+            <div style="margin:0;padding:0;background:#f6f6f8;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f6f6f8;padding:30px 15px;">
+                    <tr>
+                        <td align="center">
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="max-width:600px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;">
+
+                                <!-- Header -->
+                                <tr>
+                                    <td style="background:#0f0fbd;padding:28px 32px;text-align:center;">
+                                        <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">
+                                            Skill Verification Required
+                                        </h1>
+                                        <p style="margin:8px 0 0;color:#dbeafe;font-size:14px;">
+                                            Action Needed for Your Skill Ledger
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <!-- Body -->
+                                <tr>
+                                    <td style="padding:32px;">
+
+                                        <p style="margin:0 0 20px;color:#1E293B;font-size:16px;line-height:1.7;">
+                                            Hi,
+                                        </p>
+
+                                        <p style="margin:0 0 20px;color:#1E293B;font-size:15px;line-height:1.8;">
+                                            Your skill
+                                            <span style="background:#eef2ff;color:#0f0fbd;padding:4px 10px;border-radius:6px;font-weight:600;">
+                                                {skill_name}
+                                            </span>
+                                            at level
+                                            <span style="background:#fff7ed;color:#ff6b00;padding:4px 10px;border-radius:6px;font-weight:600;">
+                                                {self.current_level}
+                                            </span>
+                                            is currently
+                                            <span style="background:#fef2f2;color:#ef4444;padding:4px 10px;border-radius:6px;font-weight:600;">
+                                                {self.status or "Pending"}
+                                            </span>
+                                            and has not been AI verified yet.
+                                        </p>
+
+                                        <div style="background:#f8fafc;border-left:4px solid #ff6b00;padding:16px 18px;border-radius:8px;margin-bottom:24px;">
+                                            <p style="margin:0;color:#64748B;font-size:14px;line-height:1.7;">
+                                                Verification helps validate your skills, improve credibility,
+                                                and strengthen your professional profile on StrideNex.
+                                            </p>
+                                        </div>
+
+                                        <!-- CTA -->
+                                        
+
+                                        <p style="margin:24px 0 0;color:#64748B;font-size:14px;line-height:1.7;">
+                                            If you've already completed the AI verification process, you can safely ignore this message.
+                                        </p>
+
+                                    </td>
+                                </tr>
+
+                                <!-- Footer -->
+                                <tr>
+                                    <td style="background:#0F172A;padding:24px;text-align:center;">
+                                        <p style="margin:0;color:#ffffff;font-size:14px;font-weight:600;">
+                                            StrideNex Skill Ledger
+                                        </p>
+                                        <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">
+                                            Empowering Skills • Building Careers • Creating Opportunities
+                                        </p>
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            """
+
+        frappe.sendmail(
+            recipients=[student_email],
+            subject=subject,
+            message=message,
+            reference_doctype=self.doctype,
+            reference_name=self.name,  # fixed: was self.student (wrong)
+        )
 
 
 # ------------------------------------------------------------------
 # Whitelisted API
 # ------------------------------------------------------------------
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=False)
 def get_skill_ledger(student: str) -> dict:
     """
     Returns the full skill ledger for a student — used by the dashboard.
-
-    Returns:
-        {
-            "student": ...,
-            "skills": [...],
-            "summary": {
-                "total_skills": int,
-                "ai_verified": int,
-                "mentor_endorsed": int,
-                "industry_endorsed": int,
-                "evidence_items": int,
-                "ledger_integrity": "Verified" | "Tampered"
-            }
-        }
     """
+
+    # ----------------------------------------------------------
+    # PERMISSION CHECK
+    # Respects Role Permission Manager configuration
+    # ----------------------------------------------------------
+    session_user = frappe.session.user
+
+    if not frappe.has_permission(
+        "Student Skill",
+        ptype="read",
+        user=session_user
+    ):
+        frappe.throw(
+            "You do not have permission to access Student Skill.",
+            frappe.PermissionError
+        )
+
     skills = frappe.get_all(
         "Student Skill",
-        filters={"student": student, "is_public": 1},
+        filters={
+            "student": student,
+            "is_public": 1
+        },
         fields=[
-            "name", "skill", "current_level", "evidence_count",
-            "endorsement_count", "ai_verified", "self_declared",
-            "first_acquired", "last_demonstrated", "ledger_hash",
+            "name",
+            "skill",
+            "current_level",
+            "evidence_count",
+            "endorsement_count",
+            "ai_verified",
+            "self_declared",
+            "first_acquired",
+            "last_demonstrated",
+            "ledger_hash",
         ],
         order_by="skill asc",
     )
 
     # Enrich each skill with category and last evidence date
     for s in skills:
+
         skill_doc = frappe.db.get_value(
-            "Skill", s["skill"], ["skill_category", "skill_name"], as_dict=True
+            "Skill",
+            s["skill"],
+            ["skill_category", "skill_name"],
+            as_dict=True
         )
-        s["skill_name"] = skill_doc.get("skill_name") if skill_doc else s["skill"]
-        s["skill_category"] = skill_doc.get("skill_category") if skill_doc else ""
+
+        s["skill_name"] = (
+            skill_doc.get("skill_name")
+            if skill_doc else s["skill"]
+        )
+
+        s["skill_category"] = (
+            skill_doc.get("skill_category")
+            if skill_doc else ""
+        )
 
         # Latest evidence date
         last_evidence = frappe.db.get_value(
             "Skill Evidence",
-            filters={"student_skill": s["name"], "verification_status": "Verified"},
+            filters={
+                "student_skill": s["name"],
+                "verification_status": "Verified"
+            },
             fieldname="evidence_date",
             order_by="evidence_date desc",
         )
+
         s["last_demo"] = last_evidence
 
         # Endorsement breakdown
         s["mentor_endorsements"] = frappe.db.count(
             "Skill Endorsement",
-            filters={"student_skill": s["name"], "endorser_role": "Mentor"},
-        )
-        s["industry_endorsements"] = frappe.db.count(
-            "Skill Endorsement",
-            filters={"student_skill": s["name"], "endorser_role": "Industry"},
+            filters={
+                "student_skill": s["name"],
+                "endorser_role": "Mentor"
+            },
         )
 
-        # Integrity check — recompute hash and compare
+        s["industry_endorsements"] = frappe.db.count(
+            "Skill Endorsement",
+            filters={
+                "student_skill": s["name"],
+                "endorser_role": "Industry"
+            },
+        )
+
+        # Integrity check
         s["integrity"] = _verify_hash(s)
 
     summary = _build_summary(skills)
 
-    return {"student": student, "skills": skills, "summary": summary}
+    return {
+        "student": student,
+        "skills": skills,
+        "summary": summary
+    }
 
 
-@frappe.whitelist()
-def get_employability_score(student: str) -> int:
+@frappe.whitelist(allow_guest=True)
+def get_skill_score(student: str = None) -> int:
     """
-    Calculates a 0-100 employability score based on skills, verifications,
+    Calculates a 0-100 skill score based on skills, verifications,
     endorsements and evidence depth.
+
+    Formula (breadth-neutral — adding new skills never reduces score):
+      - Depth score per skill  : level (max 20) + evidence (max 15) + endorsement (max 8) + AI (max 5) = max 48
+      - Breadth bonus          : min(skill_count * 4, 20) — up to 20 pts for 5+ skills
+      - Final                  : (avg_skill_score / 48) * 80  +  breadth_bonus
+      - Rejected skills are excluded entirely.
     """
-    skills = frappe.get_all(
-        "Student Skill",
-        filters={"student": student},
-        fields=["current_level", "evidence_count", "endorsement_count", "ai_verified"],
-    )
+    try:
+        if not student:
+            return 0
 
-    if not skills:
+        # Resolve email → student name
+        if "@" in student:
+            resolved = frappe.db.get_value("Student", {"email_id": student}, "name")
+            if not resolved:
+                return 0
+            student = resolved
+
+        skills = frappe.get_all(
+            "Student Skill",
+            filters={"student": student},
+            fields=[
+                "name",
+                "current_level",
+                "evidence_count",
+                "endorsement_count",
+                "ai_verified",
+                "status"
+            ],
+            ignore_permissions=True
+        )
+
+        if not skills:
+            return 0
+
+        level_weight = {"Beginner": 1, "Intermediate": 2, "Advanced": 3, "Expert": 4}
+        total   = 0
+        counted = 0
+
+        for s in skills:
+            # Rejected skills don't contribute to employability
+            if s.get("status") == "Rejected":
+                continue
+
+            base = level_weight.get(s["current_level"], 1) * 5    # max 20
+
+            # Count verified evidence count dynamically for the score
+            verified_count = len(
+                frappe.get_all(
+                    "Skill Evidence",
+                    filters={
+                        "student_skill": s["name"],
+                        "verification_status": "Verified"
+                    },
+                    pluck="name",
+                    ignore_permissions=True
+                )
+            )
+            ev   = min(verified_count * 3, 15)               # max 15
+
+            end  = min(s["endorsement_count"] * 4, 8)             # max 8  (2 industry endorsements)
+            ai   = 5 if s["ai_verified"] else 0                   # max 5
+            total   += base + ev + end + ai
+            counted += 1
+
+        if not counted:
+            return 0
+
+        # Breadth bonus: 4 pts per skill, capped at 20 (5 skills = full breadth bonus)
+        breadth_bonus = min(counted * 4, 20)
+
+        # Per-skill average, capped at 48 (the theoretical max per skill)
+        avg_skill_score = min(total / counted, 48)
+
+        # 80% from depth/credibility + 20% from breadth
+        raw = (avg_skill_score / 48) * 80 + breadth_bonus
+        return min(round(raw), 100)
+
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "get_skill_score error")
         return 0
-
-    level_weight = {"Beginner": 1, "Intermediate": 2, "Advanced": 3, "Expert": 4}
-    total = 0
-
-    for s in skills:
-        base = level_weight.get(s["current_level"], 1) * 5
-        evidence_bonus = min(s["evidence_count"] * 3, 15)
-        endorsement_bonus = min(s["endorsement_count"] * 4, 20)
-        ai_bonus = 5 if s["ai_verified"] else 0
-        total += base + evidence_bonus + endorsement_bonus + ai_bonus
-
-    # Normalize to 100
-    max_possible = len(skills) * (20 + 15 + 20 + 5)
-    score = round((total / max_possible) * 100) if max_possible else 0
-    return min(score, 100)
 
 
 # ------------------------------------------------------------------
@@ -267,11 +481,11 @@ def _verify_hash(skill_row: dict) -> str:
     expected = hashlib.sha256(raw.encode()).hexdigest()
     return "Verified" if expected == skill_row.get("ledger_hash") else "Tampered"
 
-@frappe.whitelist()
+# Internal helper — NOT whitelisted (cannot be called via HTTP with a Python list argument)
 def _build_summary(skills: list) -> dict:
     total_evidence = sum(s["evidence_count"] for s in skills)
-    mentor_endorsed = sum(1 for s in skills if s.get("mentor_endorsements", 0) > 0)
-    industry_endorsed = sum(1 for s in skills if s.get("industry_endorsements", 0) > 0)
+    mentor_endorsed = sum(s.get("mentor_endorsements", 0) for s in skills)
+    industry_endorsed = sum(s.get("industry_endorsements", 0) for s in skills)
     ai_verified = sum(1 for s in skills if s.get("ai_verified"))
     all_verified = all(s.get("integrity") == "Verified" for s in skills)
 
@@ -312,11 +526,27 @@ def get_skill_timeline(student_skill: str):
 @frappe.whitelist(allow_guest=True)
 def create_student_skill(data):
     try:
+        session_user = frappe.session.user
+
+        # ----------------------------------------------------------
+        # PERMISSION CHECK
+        # Controlled by Role Permission Manager
+        # ----------------------------------------------------------
+        # if not frappe.has_permission(
+        #     "Student Skill",
+        #     ptype="create",
+        #     user=session_user
+        # ):
+        #     frappe.throw(
+        #         "You do not have permission to create Student Skill.",
+        #         frappe.PermissionError
+        #     )
+
         if isinstance(data, str):
             data = frappe.parse_json(data)
 
         doc = frappe.get_doc({
-            "doctype": "Student Skill",  # replace with actual doctype
+            "doctype": "Student Skill",
             "student": data.get("student"),
             "skill": data.get("skill"),
             "current_level": data.get("current_level"),
@@ -331,7 +561,9 @@ def create_student_skill(data):
             "is_public": data.get("is_public"),
         })
 
-        doc.insert(ignore_permissions=True)
+        # Respects Role Permission Manager
+        doc.insert()
+
         frappe.db.commit()
 
         return {
@@ -341,9 +573,36 @@ def create_student_skill(data):
         }
 
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Create Student Skill Error")
+        frappe.log_error(
+            frappe.get_traceback(),
+            "Create Student Skill Error"
+        )
+
         return {
             "status": "error",
             "message": str(e)
         }
-    
+
+
+@frappe.whitelist(allow_guest=True)
+def get_employability_score(student: str) -> float:
+    """
+    Returns the employability score for a student.
+    Resolves the student name from email if necessary.
+    """
+    if not student:
+        return 0.0
+
+    if "@" in student:
+        resolved_student = frappe.db.get_value("Student", {"email_id": student}, "name")
+        if resolved_student:
+            student = resolved_student
+
+    try:
+        from stridenex_app.employability import recalculate_employability_score
+        score = recalculate_employability_score(student)
+        return float(score)
+    except Exception as e:
+        frappe.log_error(title="get_employability_score error", message=frappe.get_traceback())
+        score = frappe.db.get_value("Student", student, "employability_score")
+        return float(score) if score is not None else 0.0

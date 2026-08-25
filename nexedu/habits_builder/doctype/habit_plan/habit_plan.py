@@ -1,6 +1,8 @@
 # Copyright (c) 2026, Stride nex and contributors
 # For license information, please see license.txt
 
+from builtins import Exception, len, round, set, str, sum
+
 import frappe
 from frappe.model.document import Document
 from frappe.utils import today, date_diff, add_days, getdate
@@ -11,6 +13,7 @@ class HabitPlan(Document):
     def validate(self):
         self.validate_dates()
         self.validate_habits()
+        self.validate_unique_plan_name_per_student()
 
     def validate_dates(self):
         if self.end_date and self.start_date:
@@ -23,6 +26,18 @@ class HabitPlan(Document):
         habit_names = [h.habit_name for h in self.habits]
         if len(habit_names) != len(set(habit_names)):
             frappe.throw("Duplicate habit names found in the plan. Each habit must be unique.")
+
+    def validate_unique_plan_name_per_student(self):
+        existing = frappe.db.exists(
+            "Habit Plan",
+            {
+                "student": self.student,
+                "plan_name": self.plan_name,
+                "name": ["!=", self.name]
+            }
+        )
+        if existing:
+            frappe.throw(f"You already have a habit plan named '{self.plan_name}'. Please use a unique plan name.")
 
     def on_submit(self):
         self.status = "Active"
@@ -77,7 +92,7 @@ class HabitPlan(Document):
             filters={
                 "student": self.student,
                 "log_date": [">=", from_date],
-                "habit": ["in", [h.habit_name for h in self.habits]]
+                "habit": ["in", [h.name for h in self.habits]]
             },
             fields=["status"]
         )

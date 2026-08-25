@@ -33,11 +33,11 @@ frappe.ui.form.on("Career Path", {
             return { filters: { topic: row.topic } };
         });
 
-        frm.set_query("skill", "path_milestone", function(doc, cdt, cdn) {
-            const row = locals[cdt][cdn];
-            if (!row.category) return {};
-            return { filters: { category: row.category } };
-        });
+        // frm.set_query("skill", "path_milestone", function(doc, cdt, cdn) {
+        //     const row = locals[cdt][cdn];
+        //     if (!row.category) return {};
+        //     return { filters: { category: row.category } };
+        // });
 
         // Cascade on prerequisite_skills child table
         frm.set_query("skill", "prerequisite_skills", function() {

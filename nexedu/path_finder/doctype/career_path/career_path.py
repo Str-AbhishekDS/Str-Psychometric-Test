@@ -36,14 +36,14 @@ class CareerPath(Document):
         """Ensure no duplicate skill entries in prerequisite_skills table."""
         seen = set()
         for row in self.prerequisite_skills:
-            if not row.skill:
+            if not row.prerequisite_skills:
                 continue
-            if row.skill in seen:
+            if row.prerequisite_skills in seen:
                 frappe.throw(
-                    f"Duplicate prerequisite skill: <b>{row.skill}</b>. "
+                    f"Duplicate prerequisite skill: <b>{row.prerequisite_skills}</b>. "
                     "Each skill should appear only once in prerequisites."
                 )
-            seen.add(row.skill)
+            seen.add(row.prerequisite_skills)
 
     def _validate_milestone_skills(self):
         """Warn (not throw) if a milestone has no skill linked."""

@@ -53,7 +53,7 @@ class HabitDailyLog(Document):
                 plan = frappe.get_doc("Habit Plan", plan_ref.name)
 
                 for habit_row in plan.habits:
-                    if habit_row.habit_name == self.habit:
+                    if habit_row.name == self.habit:
 
                         # 🔁 Recompute using Habit logic
                         habit_doc = frappe.get_doc("Habit", habit_row.name)
@@ -72,6 +72,20 @@ class HabitDailyLog(Document):
                 f"Failed to update streaks after log {self.name}: {str(e)}",
                 "Habit Streak Update"
             )
+        
+        self.check_and_award_badges()
+
+    def check_and_award_badges(self):
+        """Check if the student qualifies for any new streak badges and award them."""
+        try:
+            from nexedu.habits_builder.api import check_and_award_student_badges
+            check_and_award_student_badges(self.student)
+        except Exception as e:
+            frappe.log_error(
+                f"Failed to award streak badges after log {self.name}: {str(e)}",
+                "Habit Badge Award Error"
+            )
+
     def check_and_send_streak_celebration(self):
         milestone_days = [7, 14, 21, 30, 60, 90, 180, 365]
         try:
@@ -83,7 +97,7 @@ class HabitDailyLog(Document):
             for plan_ref in plans:
                 plan = frappe.get_doc("Habit Plan", plan_ref.name)
                 for habit_row in plan.habits:
-                    if habit_row.habit_name == self.habit:
+                    if habit_row.name == self.habit:
                         streak = habit_row.current_streak or 0
                         if streak in milestone_days:
                             frappe.enqueue(
@@ -102,7 +116,7 @@ def send_streak_celebration(student, habit_name, streak):
     try:
         student_doc = frappe.get_doc("Student", student)
         frappe.sendmail(
-            recipients=[student_doc.email],
+            recipients=[student_doc.email_id],
             subject=f"🔥 {streak}-Day Streak on '{habit_name}'!",
             message=f"""
             <p>Hi {student_doc.first_name}!</p>
@@ -115,9 +129,9 @@ def send_streak_celebration(student, habit_name, streak):
             {
                 "message": f"🔥 {streak}-day streak on '{habit_name}'!",
                 "streak": streak,
-                "habit": habit_name
+                "habit": habit_nameW
             },
-            user=student_doc.user
+            user=student_doc.email_id
         )
     except Exception as e:
         frappe.log_error(f"Streak celebration failed: {str(e)}", "Habit Streak Celebration")

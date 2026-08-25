@@ -14,14 +14,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const API = {
-    ENROLL         : "nexedu.path_finder.api.enroll_student",
-    CHECK_PREREQS  : "nexedu.path_finder.api.check_prerequisite_skills",
-    OVERVIEW       : "nexedu.path_finder.api.get_milestone_overview",
-    COUNT_SUMMARY  : "nexedu.path_finder.api.get_milestone_count_summary",
-    SKIP           : "nexedu.path_finder.api.skip_milestone",
-    GET_ENROLLMENT : "nexedu.path_finder.api.get_enrollment_for_student_path",
-    SUGGESTIONS    : "nexedu.path_finder.api.get_path_suggestions",
+    ENROLL         : "nexedu.path_finder.api.path_enrollment.enroll_student",
+    CHECK_PREREQS  : "nexedu.path_finder.app_api.check_prerequisite_skills",
+    OVERVIEW       : "nexedu.path_finder.api.path_enrollment.get_milestone_overview",
+    COUNT_SUMMARY  : "nexedu.path_finder.api.path_enrollment.get_milestone_count_summary",
+    SKIP           : "nexedu.path_finder.api.path_enrollment.skip_milestone",
+    SUGGESTIONS    : "nexedu.path_finder.api.path_enrollment.get_path_suggestions",
+    GET_ENROLLMENT : "nexedu.path_finder.api.path_enrollment.get_enrollment_for_student_path",
 };
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FORM EVENTS
@@ -96,6 +97,8 @@ function _run_prerequisite_check(frm) {
         callback(r) {
             if (!r.message) return;
             const result = r.message;
+            console.log(result);
+            
             frm.dashboard.clear_headline();
 
             const color = result.readiness_percent >= 75 ? "green"

@@ -53,6 +53,8 @@ def build_milestone_rows_from_path(career_path, student=None, order_offset=0):
             s.skill: s for s in student_skills
         }
 
+    seen_skills = set()
+
     # ── SECTION 1: Prerequisite Skills ───────────────────────────────────────
     prereq_skills = frappe.get_all(
         "Prerequisite Skills",
@@ -63,6 +65,12 @@ def build_milestone_rows_from_path(career_path, student=None, order_offset=0):
 
     for prereq in prereq_skills:
         skill = prereq.prerequisite_skills
+        if skill:
+            skill_key = skill.lower().strip()
+            if skill_key in seen_skills:
+                continue
+            seen_skills.add(skill_key)
+
         req_level = prereq.level or "Beginner"
         student_entry = student_skill_map.get(skill) if skill else None
         already_has = (
@@ -71,8 +79,8 @@ def build_milestone_rows_from_path(career_path, student=None, order_offset=0):
         )
         is_verified = bool(student_entry and student_entry.get("status") == "Verified")
 
-        status = "Completed" if (already_has and is_verified) else "Not Started"
-        is_auto_skip = 1 if (already_has and is_verified) else 0
+        status = "Completed" if already_has and is_verified else "Not Started"
+        is_auto_skip = 1 if already_has and is_verified else 0
 
         rows.append({
             "milestone_title"     : f"Prerequisite: {skill}",
@@ -102,6 +110,12 @@ def build_milestone_rows_from_path(career_path, student=None, order_offset=0):
     )
 
     for i, pm in enumerate(path_milestones):
+        if pm.skill:
+            skill_key = pm.skill.lower().strip()
+            if skill_key in seen_skills:
+                continue
+            seen_skills.add(skill_key)
+
         # Check if student already has this milestone's skill
         student_entry = student_skill_map.get(pm.skill) if pm.skill else None
         already_has   = (
@@ -112,12 +126,8 @@ def build_milestone_rows_from_path(career_path, student=None, order_offset=0):
         is_verified   = bool(student_entry and student_entry.get("status") == "Verified")
 
         # Auto-complete if student already has verified skill for this milestone
-        if already_has and is_verified and pm.skill:
-            status       = "Completed"
-            is_auto_skip = 1
-        else:
-            status       = "Not Started"
-            is_auto_skip = 0
+        status       = "Completed" if already_has and is_verified else "Not Started"
+        is_auto_skip = 1 if already_has and is_verified else 0
 
         rows.append({
             "milestone_title"     : pm.milestone_title,
@@ -276,7 +286,7 @@ def calculate_fit_score(student, career_path_name):
 
     total      = len(skill_requirements)
     fit_score  = round((weighted_score / total) * 100, 1) if total else 100
-
+  
     return {
         "fit_score"     : fit_score,
         "matched_count" : len(matched_skills),

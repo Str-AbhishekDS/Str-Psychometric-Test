@@ -465,32 +465,75 @@ def update_log_status(log_name: str, status: str) -> dict:
 @frappe.whitelist(allow_guest=True)
 def create_habit_plan(student: str, plan_name: str, start_date: str,
                       habits: list, linked_path: str = None,
-                      end_date: str = None, ai_generated: int = 0) -> dict:
+                      end_date: str = None, ai_generated: int = 0,
+                      plan_id: str = None) -> dict:
     """
-    Create a new Habit Plan with child Habit rows.
+    Create or update a Habit Plan with child Habit rows.
     habits: [{"habit_name": str, "habit_type": str, "frequency": str,
                "target_duration_min": int, "reminder_time": "HH:MM:SS",
                "linked_skill": str}]
     """
-    frappe.has_permission("Habit Plan", "create", throw=True)
+    frappe.has_permission("Habit Plan", "create" if not plan_id else "write", throw=True)
     _check_student_access(student)
 
     if isinstance(habits, str):
         import json
         habits = json.loads(habits)
 
-    doc = frappe.get_doc({
-        "doctype": "Habit Plan",
-        "student": student,
-        "plan_name": plan_name,
-        "start_date": start_date,
-        "end_date": end_date or None,
-        "linked_path": linked_path,
-        "status": "Active",
-        "ai_generated": ai_generated,
-        "habits": habits
-    })
-    doc.insert()
+    if plan_id:
+        doc = frappe.get_doc("Habit Plan", plan_id)
+        doc.plan_name = plan_name
+        doc.start_date = start_date
+        doc.end_date = end_date or None
+        doc.linked_path = linked_path
+        doc.status = "Active"
+        doc.ai_generated = ai_generated
+
+        new_names = {h.get("habit_name") for h in habits}
+        doc.set("habits", [h for h in doc.habits if h.habit_name in new_names])
+
+        existing_habits = {h.habit_name: h for h in doc.habits}
+        for h in habits:
+            h_name = h.get("habit_name")
+            if h_name in existing_habits:
+                row = existing_habits[h_name]
+                row.habit_type = h.get("habit_type")
+                row.frequency = h.get("frequency") or "Daily"
+                row.target_duration_min = h.get("target_duration_min") or 0
+                row.reminder_time = h.get("reminder_time")
+                row.linked_skill = h.get("linked_skill")
+            else:
+                doc.append("habits", {
+                    "habit_name": h_name,
+                    "habit_type": h.get("habit_type"),
+                    "frequency": h.get("frequency") or "Daily",
+                    "target_duration_min": h.get("target_duration_min") or 0,
+                    "reminder_time": h.get("reminder_time"),
+                    "linked_skill": h.get("linked_skill")
+                })
+        doc.save(ignore_permissions=True)
+
+        for h in doc.habits:
+            habit_doc = frappe.get_doc("Habit", h.name)
+            current, longest, rate = habit_doc.refresh_computed_fields(student)
+            h.current_streak = current
+            h.longest_streak = longest
+            h.completion_rate = rate
+        doc.save(ignore_permissions=True)
+    else:
+        doc = frappe.get_doc({
+            "doctype": "Habit Plan",
+            "student": student,
+            "plan_name": plan_name,
+            "start_date": start_date,
+            "end_date": end_date or None,
+            "linked_path": linked_path,
+            "status": "Active",
+            "ai_generated": ai_generated,
+            "habits": habits
+        })
+        doc.insert()
+
     frappe.db.commit()
     return {"plan_name": doc.name, "status": doc.status, "habits_count": len(doc.habits)}
 
@@ -882,4 +925,212 @@ def delete_habit_plan(plan_name: str, habit_name: str, student: str):
     return {
         "status": "success",
         "message": f"Habit Plan '{plan_name}' and all associated habits/logs deleted successfully"
+    }
+
+def check_and_award_student_badges(student: str):
+    """Check if the student qualifies for any new streak badges and award them."""
+    try:
+        max_current, max_longest = _get_overall_streaks(student)
+
+        if max_current <= 0:
+            return
+
+        qualifying_badges = frappe.get_all(
+            "Streak Badge",
+            filters={"is_active": 1, "streak_count": ["<=", max_current]},
+            fields=["name", "badge_name", "streak_count"]
+        )
+
+        for badge in qualifying_badges:
+            already_earned = frappe.db.exists(
+                "Student Earned Badge",
+                {
+                    "student": student,
+                    "badge": badge.name
+                }
+            )
+
+            if not already_earned:
+                # Find a habit to link if possible (optional)
+                plans = frappe.get_all(
+                    "Habit Plan",
+                    filters={"student": student, "status": "Active"},
+                    fields=["name"]
+                )
+                linked_habit = None
+                for p in plans:
+                    habits = frappe.get_all(
+                        "Habit",
+                        filters={"parent": p.name},
+                        fields=["name", "current_streak"]
+                    )
+                    for h in habits:
+                        if (h.current_streak or 0) >= badge.streak_count:
+                            linked_habit = h.name
+                            break
+                    if linked_habit:
+                        break
+
+                earned_doc = frappe.get_doc({
+                    "doctype": "Student Earned Badge",
+                    "student": student,
+                    "badge": badge.name,
+                    "earned_date": today(),
+                    "habit": linked_habit
+                })
+                earned_doc.insert(ignore_permissions=True)
+                frappe.db.commit()
+
+                student_email = frappe.db.get_value("Student", student, "email_id")
+                if student_email:
+                    frappe.publish_realtime(
+                        "badge_unlocked",
+                        {
+                            "badge_name": badge.badge_name,
+                            "streak_count": badge.streak_count,
+                            "student": student
+                        },
+                        user=student_email
+                    )
+    except Exception as e:
+        frappe.log_error(
+            f"Failed to award streak badges for student {student}: {str(e)}",
+            "Habit Badge Award Error"
+        )
+
+@frappe.whitelist(allow_guest=True)
+def get_student_badges(student: str) -> dict:
+    """
+    Returns both earned and locked badges for a student.
+    Locked badges include a progress indicator towards unlocking them.
+    """
+    # Auto-award any qualifying badges they already reached
+    check_and_award_student_badges(student)
+    # Get all active badges
+    all_badges = frappe.get_all(
+        "Streak Badge",
+        filters={"is_active": 1},
+        fields=["name", "badge_name", "streak_count", "description", "badge_icon", "color_theme"],
+        order_by="streak_count asc"
+    )
+
+    # Get student's earned badges
+    earned_records = frappe.get_all(
+        "Student Earned Badge",
+        filters={"student": student},
+        fields=["badge", "earned_date", "habit"]
+    )
+    earned_badge_names = {r.badge: r for r in earned_records}
+
+    # Get student's max streak (to compute progress for locked badges)
+    current_streak, longest_streak = _get_overall_streaks(student)
+
+    badges_list = []
+    for b in all_badges:
+        is_earned = b.name in earned_badge_names
+        earned_info = earned_badge_names.get(b.name)
+        
+        badges_list.append({
+            "badge_id": b.name,
+            "badge_name": b.badge_name,
+            "streak_count": b.streak_count,
+            "description": b.description,
+            "badge_icon": b.badge_icon,
+            "color_theme": b.color_theme,
+            "is_earned": is_earned,
+            "earned_date": str(earned_info.earned_date) if is_earned else None,
+            "progress": {
+                "current": current_streak,
+                "target": b.streak_count,
+                "percentage": min(100, round((current_streak / b.streak_count) * 100)) if b.streak_count > 0 else 100
+            }
+        })
+
+    return {
+        "badges": badges_list,
+        "total_earned": len(earned_records),
+        "total_available": len(all_badges)
+    }
+
+@frappe.whitelist(allow_guest=True)
+def create_default_badges():
+    """Create initial standard streak badges if they do not exist."""
+    default_badges = [
+        {"badge_name": "7-Day Streak", "streak_count": 7, "color_theme": "Bronze", "description": "Completed a 7-day habit streak! Keep up the momentum!"},
+        {"badge_name": "14-Day Streak", "streak_count": 14, "color_theme": "Bronze", "description": "Completed a 14-day habit streak! You are building a solid routine."},
+        {"badge_name": "30-Day Streak", "streak_count": 30, "color_theme": "Silver", "description": "Completed a 30-day habit streak! Excellent commitment to growth."},
+        {"badge_name": "50-Day Streak", "streak_count": 50, "color_theme": "Gold", "description": "Completed a 50-day habit streak! You are officially dedicated."},
+        {"badge_name": "100-Day Streak", "streak_count": 100, "color_theme": "Platinum", "description": "Completed a 100-day habit streak! Unstoppable consistency!"},
+        {"badge_name": "365-Day Streak", "streak_count": 365, "color_theme": "Diamond", "description": "Completed a 365-day habit streak! A full year of transformation!"}
+    ]
+    created = 0
+    for badge in default_badges:
+        if not frappe.db.exists("Streak Badge", badge["badge_name"]):
+            doc = frappe.get_doc({
+                "doctype": "Streak Badge",
+                "badge_name": badge["badge_name"],
+                "streak_count": badge["streak_count"],
+                "color_theme": badge["color_theme"],
+                "description": badge["description"],
+                "is_active": 1
+            })
+            doc.insert(ignore_permissions=True)
+            created += 1
+    if created > 0:
+        frappe.db.commit()
+    return f"Created {created} badges."
+
+
+@frappe.whitelist(allow_guest=True)
+def get_badge_icon(file_url: str):
+    """Serve badge icon file content directly from the filesystem (handling public/private)."""
+    import os
+    if not file_url:
+        frappe.throw("file_url is required", frappe.ValidationError)
+
+    # Standardize the file path to prevent directory traversal attacks
+    if "../" in file_url or ".." in file_url:
+        frappe.throw("Invalid file path", frappe.PermissionError)
+
+    # Check if the path starts with /files/ or /private/files/
+    if not (file_url.startswith("/files/") or file_url.startswith("/private/files/")):
+        frappe.throw("Access denied to this directory", frappe.PermissionError)
+
+    # Construct the absolute path on the server
+    site_path = frappe.get_site_path()
+    if file_url.startswith("/private/files/"):
+        # private file uploader path: site_path/private/files/...
+        relative_path = file_url.lstrip("/")
+    else:
+        # public file uploader path: site_path/public/files/...
+        # replace '/files/' with 'public/files/'
+        relative_path = "public/" + file_url.lstrip("/")
+
+    file_path = os.path.abspath(os.path.join(site_path, relative_path))
+
+    # Verify the file is still within the site directory
+    if not file_path.startswith(os.path.abspath(site_path)):
+        frappe.throw("Invalid path traversal", frappe.PermissionError)
+
+    if not os.path.exists(file_path):
+        frappe.respond_as_web_page("Not Found", "File not found", http_status_code=404)
+        return
+
+    # Get mime type
+    import mimetypes
+    mime_type, encoding = mimetypes.guess_type(file_path)
+    if not mime_type:
+        mime_type = "application/octet-stream"
+
+    # Read and serve the file
+    with open(file_path, "rb") as f:
+        content = f.read()
+
+    frappe.local.response.filename = os.path.basename(file_path)
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "download" if mime_type == "application/octet-stream" else "binary"
+    frappe.local.response.display = "inline"
+    frappe.local.response.headers = {
+        "Content-Type": mime_type,
+        "Cache-Control": "public, max-age=31536000"
     }

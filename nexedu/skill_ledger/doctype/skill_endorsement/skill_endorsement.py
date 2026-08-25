@@ -16,9 +16,10 @@ class SkillEndorsement(Document):
         if not self.student_skill:
             return
 
+        # Count only VERIFIED evidences (consistent with before_save in student_skill.py)
         evidence_count = frappe.db.count(
             "Skill Evidence",
-            {"student_skill": self.student_skill}
+            {"student_skill": self.student_skill, "verification_status": "Verified"}
         )
 
         endorsement_count = frappe.db.count(
@@ -54,19 +55,49 @@ class SkillEndorsement(Document):
     # ------------------------------------------------------------------
 
     def _prevent_duplicate(self):
-        """One endorser can only endorse the same student skill once."""
-        exists = frappe.db.exists(
-            "Skill Endorsement",
-            {
-                "student_skill": self.student_skill,
-                "endorsed_by": self.endorsed_by,
-            },
-        )
-        if exists:
-            frappe.throw(
-                f"{self.endorsed_by} has already endorsed this skill.",
-                frappe.DuplicateEntryError,
+        """
+        Prevent duplicate endorsements.
+
+        Rules:
+          - A Mentor / Professor / Peer can only endorse a skill ONCE
+            per user (checked by endorsed_by + student_skill).
+          - An Industry can endorse the same skill multiple times IF
+            each endorsement comes from a different opportunity
+            (source_name). This allows a student accepted for both a
+            Project and an Internship from the same company to receive
+            two separate endorsements.
+            Duplicate = same (student_skill + endorser_company + source_name).
+        """
+        if self.endorser_role == "Industry":
+            # One endorsement per company per opportunity per skill
+            filters = {
+                "student_skill":    self.student_skill,
+                "endorser_role":    "Industry",
+                "endorser_company": self.endorser_company or "",
+                "source_name":      self.source_name or "",
+            }
+            exists = frappe.db.exists("Skill Endorsement", filters)
+            if exists:
+                frappe.throw(
+                    f"This industry ({self.endorser_company}) has already "
+                    f"endorsed this skill for opportunity '{self.source_name}'.",
+                    frappe.DuplicateEntryError,
+                )
+        else:
+            # For Mentor / Peer / Professor: one endorsement per user per skill
+            exists = frappe.db.exists(
+                "Skill Endorsement",
+                {
+                    "student_skill": self.student_skill,
+                    "endorsed_by":   self.endorsed_by,
+                },
             )
+            if exists:
+                frappe.throw(
+                    f"{self.endorsed_by} has already endorsed this skill.",
+                    frappe.DuplicateEntryError,
+                )
+
 
     def _refresh_parent(self):
         if self.student_skill:

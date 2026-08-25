@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:{student}-{skill}",
  "creation": "2026-03-13 12:32:19.285689",
@@ -124,8 +125,8 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-14 13:15:17.452438",
- "modified_by": "Administrator",
+ "modified": "2026-06-24 15:41:42.302226",
+ "modified_by": "abhisheksadale96@gmail.com",
  "module": "Skill Ledger",
  "name": "Student Skill",
  "naming_rule": "Expression (old style)",

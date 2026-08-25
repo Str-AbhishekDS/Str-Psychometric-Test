@@ -22,8 +22,10 @@ doctype_js = {
  
 # Scheduled Tasks
 scheduler_events = {
+    "all": [
+        # "nexedu.api.skill_assessment_ai.enqueue_prepopulate_cache"
+    ],
     "daily": [
-        "nexedu.habits_builder.tasks.send_morning_nudges",          # 8 AM nudge for today's habits
         "nexedu.habits_builder.tasks.check_broken_streaks",         # Detect streak breaks overnight
         "nexedu.habits_builder.tasks.auto_complete_ended_plans",    # Mark plans past end_date as Completed
     ],
@@ -35,8 +37,8 @@ scheduler_events = {
         "0 8 * * *": [
             "nexedu.habits_builder.tasks.send_morning_nudges"
         ],
-        "0 20 * * *": [
-            "nexedu.habits_builder.tasks.send_evening_checkin"
+        "5 20 * * *": [
+            "nexedu.habits_builder.tasks.check_incomplete_habits"
         ]
     }
 }

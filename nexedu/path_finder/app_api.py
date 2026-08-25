@@ -76,41 +76,19 @@ def check_prerequisite_skills(student, career_path):
 # ══════════════════════════════════════════════════════════════════════════════
 
 @frappe.whitelist()
-def enroll_student(student, career_path, force_enroll=0, prereq_paths="[]"):
+def enroll_student(student, career_path, force_enroll=0, prereq_paths="[]", path_generation_mode=None, roadmap_source=None):
     """
     Creates a Student Path Enrollment document.
-    The controller's after_insert will call build_milestone_rows_from_path
-    (which auto-prepends prerequisite skills as milestone rows).
-
-    prereq_paths is accepted but ignored here — the engine handles prereqs
-    by reading the Career Path's prerequisite_skills table directly.
-
-    Returns: { status: "success", enrollment: <name> }
+    Delegates to nexedu.path_finder.api.path_enrollment.enroll_student.
     """
-    import json
-
-    # Prevent duplicate active enrollment
-    existing = frappe.db.exists(
-        "Student Path Enrollment",
-        {"student": student, "career_path": career_path, "status": "Active"},
+    from nexedu.path_finder.api.path_enrollment import enroll_student as enroll_student_core
+    return enroll_student_core(
+        student=student,
+        career_path=career_path,
+        force_enroll=force_enroll,
+        path_generation_mode=path_generation_mode,
+        roadmap_source=roadmap_source,
     )
-    if existing:
-        return {"status": "already_enrolled", "enrollment": existing}
-
-    doc = frappe.get_doc({
-        "doctype"    : "Student Path Enrollment",
-        "student"    : student,
-        "career_path": career_path,
-        "status"     : "Active",
-        "enrolled_at": now_datetime(),
-        "current_milestone_order": 1,
-        "force_enroll": int(force_enroll),
-        "triggered_from": "API",
-    })
-    doc.insert(ignore_permissions=True)
-    frappe.db.commit()
-
-    return {"status": "success", "enrollment": doc.name}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -497,6 +475,38 @@ def get_student_career_path(student):
             "data": get_active_plan(student)
         }
 
+    generating_enrollment = frappe.db.exists(
+        "Student Path Enrollment",
+        {
+            "student": student,
+            "status": "Generating"
+        }
+    )
+
+    if generating_enrollment:
+        career_path = frappe.db.get_value("Student Path Enrollment", generating_enrollment, "career_path")
+        return {
+            "type": "generating",
+            "career_path": career_path
+        }
+
+    # Check for failed AI generation (Paused status with no milestones generated)
+    paused_failed_enrollment = frappe.db.exists(
+        "Student Path Enrollment",
+        {
+            "student": student,
+            "status": "Paused"
+        }
+    )
+    if paused_failed_enrollment:
+        enr_doc = frappe.get_doc("Student Path Enrollment", paused_failed_enrollment)
+        if not enr_doc.milestone_progress:
+            return {
+                "type": "failed",
+                "career_path": enr_doc.career_path,
+                "enrollment": enr_doc.name
+            }
+
     return {
         "type": "recommended_path",
         "data": get_best_path(student)
@@ -529,9 +539,13 @@ def get_best_path(student):
             "category", "topic", "subtopic", "required_skill_level",
             "is_mandatory", "duration_days", "linked_resource",
             "linked_resource_type", "pass_percentage", "assessment", "idx",
+            "milestone_points",
         ],
         order_by="idx asc",
     )
+
+    for m in path_milestones:
+        m["points"] = [p.strip() for p in (m.get("milestone_points") or "").split("\n") if p.strip()]
 
     best["prerequisite_skills"] = prereq_skills
     best["milestones"] = path_milestones
@@ -608,6 +622,8 @@ def get_active_plan(student):
     duration_by_title = {m.milestone_title: (m.duration_days or 0) for m in path_milestones}
 
     def get_duration(row):
+        if getattr(row, "duration_days", 0):
+            return row.duration_days
         if row.milestone and row.milestone in duration_by_name:
             duration = duration_by_name[row.milestone]
         else:
@@ -645,7 +661,19 @@ def get_active_plan(student):
             date_label = "projected"
             cursor_date = projected_date
 
+        # Get checklist points for this milestone
+        m_points = [
+            {
+                "name": p.name,
+                "point_title": p.point_title,
+                "status": p.status
+            }
+            for p in (enrollment.get("milestone_points") or [])
+            if p.milestone_title == row.milestone_title
+        ]
+
         milestones.append({
+            "name"                : row.name,
             "milestone_title"     : row.milestone_title,
             "status"              : row.status,
             "is_mandatory"        : row.is_mandatory,
@@ -655,7 +683,7 @@ def get_active_plan(student):
             "date_label"          : date_label,
             "skill"               : row.skill,
             "required_skill_level": row.required_skill_level,
-            "category"            : row.category,
+            "category"            : row.skill_tier or row.category,
             "topic"               : row.topic,
             "subtopic"            : row.subtopic,
             "milestone_type"      : row.milestone_type,
@@ -663,10 +691,27 @@ def get_active_plan(student):
             "linked_resource_type": row.linked_resource_type,
             "is_prereq"           : row.is_prereq,
             "is_lock"             : row.is_lock,
+            "points"              : m_points,
         })
 
-    progress_percent = round((completed_count / total_count) * 100, 1) if total_count else 0
-    is_completed = total_count > 0 and completed_count == total_count
+    difficulty_level, average_salary = frappe.db.get_value(
+        "Career Path",
+        enrollment.career_path,
+        ["difficulty_level", "average_salary_lpa"]
+    ) or ("Moderate", 0.0)
+
+    prereq_skills = frappe.get_all(
+        "Prerequisite Skills",
+        filters={"parent": enrollment.career_path, "parentfield": "prerequisite_skills"},
+        fields=["prerequisite_skills", "level"],
+        order_by="idx asc",
+    )
+
+    score_data = calculate_fit_score(student, enrollment.career_path)
+    missing_skills = score_data.get("missing_skills", [])
+
+    progress_percent = int(round((completed_count / total_count) * 100)) if total_count > 0 else 0
+    is_completed = 1 if (total_count > 0 and completed_count == total_count) else 0
 
     return {
         "has_active_plan"      : True,
@@ -678,4 +723,115 @@ def get_active_plan(student):
         "completed_milestones" : completed_count,
         "estimated_completion" : formatdate(cursor_date, "MMM yyyy"),
         "milestones"           : milestones,
+        "difficulty_level"     : difficulty_level,
+        "average_salary"       : average_salary,
+        "prerequisite_skills"  : prereq_skills,
+        "missing_skills"       : missing_skills,
+        "matched_skills"       : score_data.get("matched_skills", []),
+    }
+
+
+@frappe.whitelist()
+def get_all_career_paths(search_query=None, page=1, page_length=20):
+    """
+    Returns a paginated list of career paths from the Career Knowledge database,
+    optionally filtered by search_query (matching career_name, industry, summary, or skill_name).
+    """
+    try:
+        page = int(page)
+        page_length = int(page_length)
+    except ValueError:
+        page = 1
+        page_length = 20
+
+    start = (page - 1) * page_length
+
+    # Build filters dynamically
+    filters = {}
+    or_filters = []
+    if search_query:
+        query = f"%{search_query}%"
+        # Find parents with matching skills
+        matching_parents = frappe.db.sql("""
+            SELECT DISTINCT parent 
+            FROM `tabCareer Knowledge Skill`
+            WHERE parenttype = 'Career Knowledge' AND skill_name LIKE %s
+        """, query, pluck=True)
+
+        or_filters = [
+            ["career_name", "like", query],
+            ["industry", "like", query],
+            ["summary", "like", query]
+        ]
+        if matching_parents:
+            or_filters.append(["name", "in", matching_parents])
+
+    total_count = len(frappe.get_all("Career Knowledge", filters=filters, or_filters=or_filters, pluck="name"))
+
+    records = frappe.get_all(
+        "Career Knowledge",
+        fields=[
+            "name",
+            "career_name",
+            "industry",
+            "category",
+            "career_stage",
+            "minimum_salary",
+            "maximum_salary",
+            "summary"
+        ],
+        filters=filters,
+        or_filters=or_filters,
+        start=start,
+        page_length=page_length,
+        order_by="career_name asc"
+    )
+
+    if not records:
+        return {
+            "paths": [],
+            "total_count": 0,
+            "page": page,
+            "page_length": page_length,
+            "total_pages": 0
+        }
+
+    record_names = [r.name for r in records]
+    skills_map = {}
+    skills_data = frappe.db.sql("""
+        SELECT parent, skill_name 
+        FROM `tabCareer Knowledge Skill`
+        WHERE parenttype = 'Career Knowledge' AND parent IN %s
+    """, (record_names,), as_dict=True)
+
+    for row in skills_data:
+        parent = row["parent"]
+        skill = row["skill_name"]
+        if parent not in skills_map:
+            skills_map[parent] = []
+        skills_map[parent].append(skill)
+
+    paths = []
+    for r in records:
+        paths.append({
+            "name": r.name,
+            "path_name": r.career_name,
+            "difficulty_level": r.career_stage or "Moderate",
+            "target_role": r.career_name,
+            "target_industry": r.industry or "Technology",
+            "estimated_duration_months": 6,
+            "average_salary_lpa": 0,
+            "skills": skills_map.get(r.name, []),
+            "summary": r.summary
+        })
+
+    import math
+    total_pages = math.ceil(total_count / page_length)
+
+    return {
+        "paths": paths,
+        "total_count": total_count,
+        "page": page,
+        "page_length": page_length,
+        "total_pages": total_pages
     }
