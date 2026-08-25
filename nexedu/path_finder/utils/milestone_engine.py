@@ -61,30 +61,31 @@ def build_milestone_rows_from_path(career_path, student=None, order_offset=0):
         order_by="idx asc",
     )
 
-    for ps in prereq_skills:
-        student_entry  = student_skill_map.get(ps.skill)
-        already_has    = (
+    for prereq in prereq_skills:
+        skill = prereq.prerequisite_skills
+        req_level = prereq.level or "Beginner"
+        student_entry = student_skill_map.get(skill) if skill else None
+        already_has = (
             student_entry
-            and level_rank(student_entry.skill_level) >= level_rank(ps.required_skill_level)
+            and level_rank(student_entry.current_level) >= level_rank(req_level)
         )
-        is_verified    = bool(student_entry and student_entry.get("is_verified"))
+        is_verified = bool(student_entry and student_entry.get("status") == "Verified")
 
-        status         = "Completed" if (already_has and is_verified) else "Not Started"
-        is_auto_skip   = 1 if (already_has and is_verified) else 0
+        status = "Completed" if (already_has and is_verified) else "Not Started"
+        is_auto_skip = 1 if (already_has and is_verified) else 0
 
         rows.append({
-            "milestone_title"   : f"{ps.prerequisite_skills}",
-            "milestone_type"    : "Learn",
-            "is_prereq"         : 1,
-            "is_mandatory"      : 1,
-            "skill"             : ps.skill,
-            "required_skill_level": ps.required_skill_level or "Beginner",
-            "status"            : status,
-            "is_auto_skipped"   : is_auto_skip,
-            "is_lock"           : 0,
-            "completed_at"      : now_datetime() if is_auto_skip else None,
-            "score"             : 100 if is_auto_skip else None,
-            "ai_feedback"       : "Skill already verified — auto-completed." if is_auto_skip else None,
+            "milestone_title"     : f"Prerequisite: {skill}",
+            "milestone_order"     : len(rows) + 1,
+            "milestone_type"      : "Learn",
+            "is_prereq"           : 1,
+            "is_mandatory"        : 1,
+            "skill"               : skill,
+            "required_skill_level": req_level,
+            "status"              : status,
+            "is_auto_skipped"     : is_auto_skip,
+            "is_lock"             : 0,
+            "completed_at"        : now_datetime() if is_auto_skip else None,
         })
 
     # ── SECTION 2: Path Milestones ────────────────────────────────────────────
@@ -100,33 +101,27 @@ def build_milestone_rows_from_path(career_path, student=None, order_offset=0):
         order_by="idx asc",
     )
 
-    # Lock first non-prereq milestone if there are incomplete prereqs
-    # (only relevant if any prereq is NOT auto-completed)
-    has_incomplete_prereqs = any(
-        r["status"] != "Completed" for r in rows
-    )
-
     for i, pm in enumerate(path_milestones):
         # Check if student already has this milestone's skill
         student_entry = student_skill_map.get(pm.skill) if pm.skill else None
         already_has   = (
             student_entry
             and pm.skill
-            and level_rank(student_entry.skill_level) >= level_rank(pm.required_skill_level)
+            and level_rank(student_entry.current_level) >= level_rank(pm.required_skill_level)
         )
-        is_verified   = bool(student_entry and student_entry.get("is_verified"))
+        is_verified   = bool(student_entry and student_entry.get("status") == "Verified")
 
         # Auto-complete if student already has verified skill for this milestone
         if already_has and is_verified and pm.skill:
             status       = "Completed"
             is_auto_skip = 1
         else:
-            # Lock first path milestone if prereqs are pending
             status       = "Not Started"
             is_auto_skip = 0
 
         rows.append({
             "milestone_title"     : pm.milestone_title,
+            "milestone_order"     : len(rows) + 1,
             "milestone_type"      : pm.milestone_type,
             "is_prereq"           : 0,
             "is_mandatory"        : pm.is_mandatory if pm.is_mandatory is not None else 1,
@@ -261,12 +256,12 @@ def calculate_fit_score(student, career_path_name):
                 "current_level" : None,
                 "is_prereq"     : req.get("is_prereq", 0),
             })
-        elif level_rank(student_entry.skill_level) >= level_rank(required_level):
+        elif level_rank(student_entry.current_level) >= level_rank(required_level):
             matched_skills.append({
                 "skill"         : skill_name,
                 "required_level": required_level,
-                "current_level" : student_entry.skill_level,
-                "is_verified"   : student_entry.get("is_verified", 0),
+                "current_level" : student_entry.current_level,
+                "is_verified"   : 1 if student_entry.get("status") == "Verified" else 0,
                 "is_prereq"     : req.get("is_prereq", 0),
             })
             weighted_score += 1.0
@@ -274,7 +269,7 @@ def calculate_fit_score(student, career_path_name):
             partial_skills.append({
                 "skill"         : skill_name,
                 "required_level": required_level,
-                "current_level" : student_entry.skill_level,
+                "current_level" : student_entry.current_level,
                 "is_prereq"     : req.get("is_prereq", 0),
             })
             weighted_score += 0.5
@@ -311,12 +306,14 @@ def _get_all_path_skills(career_path_name):
         fields=["prerequisite_skills", "level"],
     )
     for p in prereqs:
-        if not p.skill:
+        skill = p.prerequisite_skills
+        if not skill:
             continue
-        existing = skill_map.get(p.skill)
-        if not existing or level_rank(p.required_skill_level) > level_rank(existing["required_skill_level"]):
-            skill_map[p.skill] = {
-                "required_skill_level": p.required_skill_level or "Beginner",
+        existing = skill_map.get(skill)
+        req_level = p.level or "Beginner"
+        if not existing or level_rank(req_level) > level_rank(existing["required_skill_level"]):
+            skill_map[skill] = {
+                "required_skill_level": req_level,
                 "is_prereq"           : 1,
             }
 

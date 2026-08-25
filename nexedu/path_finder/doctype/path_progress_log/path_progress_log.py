@@ -251,13 +251,13 @@ class PathProgressLog(Document):
         existing = frappe.db.get_value(
             "Student Skill",
             {"student": student, "skill": skill},
-            ["name", "skill_level"],
+            ["name", "current_level"],
             as_dict=True,
         )
 
         if existing:
-            if level_rank(skill_level) > level_rank(existing.skill_level):
-                frappe.db.set_value("Student Skill", existing.name, "skill_level", skill_level)
+            if level_rank(skill_level) > level_rank(existing.current_level):
+                frappe.db.set_value("Student Skill", existing.name, "current_level", skill_level)
                 frappe.db.commit()
                 frappe.msgprint(
                     f"Skill '<b>{skill}</b>' upgraded to <b>{skill_level}</b>.",
@@ -268,7 +268,7 @@ class PathProgressLog(Document):
                 "doctype"      : "Student Skill",
                 "student"      : student,
                 "skill"        : skill,
-                "skill_level"  : skill_level,
+                "current_level": skill_level,
                 "self_declared": 0,
                 "is_public"    : 1,
             }).insert(ignore_permissions=True)
