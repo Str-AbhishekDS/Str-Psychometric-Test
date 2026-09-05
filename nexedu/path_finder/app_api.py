@@ -14,6 +14,8 @@ import frappe
 from frappe.utils import now_datetime
 from frappe.utils import getdate, add_days, formatdate, today
 
+from frappe.utils.pdf import get_pdf
+
 
 from nexedu.path_finder.utils.milestone_engine import (
     build_milestone_rows_from_path,
@@ -22,7 +24,230 @@ from nexedu.path_finder.utils.milestone_engine import (
     level_rank,
 )
 
+"""
+career_path_api.py
 
+Add this file to your app, e.g.:
+    your_app/your_app/api/career_path.py
+
+Endpoints exposed:
+    GET /api/method/your_app.api.career_path.get_student_career_path
+    GET /api/method/your_app.api.career_path.get_career_path_html   (preview in browser)
+    GET /api/method/your_app.api.career_path.get_career_path_pdf    (download as PDF)
+
+Template expected at:
+    your_app/your_app/templates/career_path_pdf.html
+(i.e. inside your app's `templates` folder, so frappe.render_template can find it
+by the "app_name/templates/xxx.html" convention)
+"""
+
+# ---------------------------------------------------------------
+# Top skill gaps for a college
+# ---------------------------------------------------------------
+@frappe.whitelist(allow_guest=True)
+def get_top_skill_gaps(college):
+    if not college:
+        frappe.throw("college is required")
+
+    if not frappe.db.exists("College", college):
+        frappe.throw(f"College '{college}' not found")
+
+    results = frappe.db.sql(
+        """
+        SELECT
+            smp.linked_skill AS skill,
+            sk.skill_name AS skill_name,
+            COUNT(*) AS gap_count
+        FROM `tabStudent Milestone Progress` smp
+        INNER JOIN `tabStudent Path Enrollment` spe
+            ON smp.parent = spe.name
+        INNER JOIN `tabStudent` s
+            ON spe.student = s.name
+        LEFT JOIN `tabSkill` sk
+            ON smp.linked_skill = sk.name
+        WHERE
+            s.college = %(college)s
+            AND smp.is_skippable = 0
+            AND smp.status != 'Completed'
+            AND smp.linked_skill IS NOT NULL
+            AND smp.linked_skill != ''
+        GROUP BY smp.linked_skill
+        ORDER BY gap_count DESC
+        LIMIT 10
+        """,
+        {"college": college},
+        as_dict=True,
+    )
+
+    return {
+        "college": college,
+        "top_skill_gaps": results,
+    }
+# @frappe.whitelist()
+# def get_student_career_path(student):
+#     """
+#     Returns:
+#     - Active career path details if student has an active enrollment.
+#     - Generating status if AI generation is in progress.
+#     - Failed status if AI generation failed (Paused, no milestones).
+#     - Best suggested career path otherwise.
+#     """
+#     active_enrollment = frappe.db.exists(
+#         "Student Path Enrollment",
+#         {"student": student, "status": "Active"}
+#     )
+#     if active_enrollment:
+#         return {"type": "active_plan", "data": get_active_plan(student)}
+
+#     generating_enrollment = frappe.db.exists(
+#         "Student Path Enrollment",
+#         {"student": student, "status": "Generating"}
+#     )
+#     if generating_enrollment:
+#         career_path = frappe.db.get_value(
+#             "Student Path Enrollment", generating_enrollment, "career_path"
+#         )
+#         return {"type": "generating", "career_path": career_path}
+
+#     # Check for failed AI generation (Paused status with no milestones generated)
+#     paused_failed_enrollment = frappe.db.exists(
+#         "Student Path Enrollment",
+#         {"student": student, "status": "Paused"}
+#     )
+#     if paused_failed_enrollment:
+#         enr_doc = frappe.get_doc("Student Path Enrollment", paused_failed_enrollment)
+#         if not enr_doc.milestone_progress:
+#             return {
+#                 "type": "failed",
+#                 "career_path": enr_doc.career_path,
+#                 "enrollment": enr_doc.name,
+#             }
+
+#     return {"type": "recommended_path", "data": get_best_path(student)}
+
+
+# ---------------------------------------------------------------------------
+# Context builder shared by both the HTML preview and the PDF download
+# ---------------------------------------------------------------------------
+
+def _build_pdf_context(student):
+    """
+    Fetches the career path result and flattens it into a single context
+    dict that the Jinja template can consume directly, regardless of which
+    of the four "type" branches was returned.
+    """
+    result = get_student_career_path(student)
+
+    student_doc = frappe.get_doc("Student", student)
+    student_name = getattr(student_doc, "student_name", None) or student_doc.name
+
+    context = {
+        "student_id": student_doc.name,
+        "student_name": student_name,
+        "generated_on": frappe.utils.now_datetime().strftime("%d %b %Y, %I:%M %p"),
+        "type": result.get("type"),
+        "career_path": None,
+        "data": None,
+        "enrollment": None,
+    }
+
+    if result["type"] == "active_plan":
+        context["data"] = result.get("data") or {}
+        context["career_path"] = context["data"].get("career_path")
+
+    elif result["type"] == "generating":
+        context["career_path"] = result.get("career_path")
+
+    elif result["type"] == "failed":
+        context["career_path"] = result.get("career_path")
+        context["enrollment"] = result.get("enrollment")
+
+    elif result["type"] == "recommended_path":
+        context["data"] = result.get("data") or {}
+        context["career_path"] = context["data"].get("career_path")
+
+    return context
+
+
+# ---------------------------------------------------------------------------
+# HTML preview endpoint (renders in the browser, also useful for Ctrl+P -> PDF)
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_career_path_html(student):
+    """
+    GET /api/method/your_app.api.career_path.get_career_path_html?student=STU-0001
+
+    Renders the same template used for the PDF, but returns it as a normal
+    HTML page so it can be embedded in an iframe or opened directly for
+    on-screen preview before downloading.
+    """
+    context = _build_pdf_context(student)
+    
+    html = frappe.render_template(
+        "nexedu/templates/path_finder.html", context
+    )
+    frappe.response["type"] = "page"
+    frappe.response["page"] = html
+
+
+# ---------------------------------------------------------------------------
+# PDF download endpoint
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def get_career_path_pdf(student):
+ 
+    context = _build_pdf_context(student)
+    
+    html = frappe.render_template(
+        "nexedu/templates/path_finder.html", context
+    )
+    frappe.logger().info(f"HTML length: {len(html)}")
+    pdf_content = get_pdf(html, {...})
+    frappe.logger().info(f"PDF length: {len(pdf_content) if pdf_content else 'None'}")
+
+    pdf_content = get_pdf(html, {"orientation": "Portrait", "page-size": "A4"})
+
+    frappe.local.response.filename = f"career_path_{student}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "pdf"
+
+
+# ---------------------------------------------------------------------------
+# Placeholders — replace with your real implementations
+# ---------------------------------------------------------------------------
+
+def get_active_plan(student):
+    """
+    Example shape expected by the template:
+    {
+        "career_path": "Data Science Track",
+        "progress_percent": 42,
+        "start_date": "2026-04-01",
+        "milestones": [
+            {"title": "Python Basics", "status": "Completed", "target_date": "2026-04-15", "description": "..."},
+            {"title": "Statistics Foundations", "status": "In Progress", "target_date": "2026-05-01", "description": "..."},
+        ],
+    }
+    """
+    raise NotImplementedError
+
+
+def get_best_path(student):
+    """
+    Example shape expected by the template:
+    {
+        "career_path": "UX Design Track",
+        "match_score": 87,
+        "description": "Recommended based on your interests and aptitude scores.",
+        "milestones": [
+            {"title": "Design Fundamentals", "description": "..."},
+            {"title": "Portfolio Project", "description": "..."},
+        ],
+    }
+    """
+    raise NotImplementedError
 # ══════════════════════════════════════════════════════════════════════════════
 # 1. CHECK PREREQUISITE SKILLS
 #    Used by: student_path_enrollment.js, career_path.js live check
@@ -453,7 +678,7 @@ def complete_milestone_in_enrollment(enrollment_name, milestone_row_name, score=
     frappe.db.commit()
     
     
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_student_career_path(student):
     """
     Returns:

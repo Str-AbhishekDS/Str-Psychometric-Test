@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Career Path - {{ student_name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 16mm 14mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: #1f2937;
+            font-size: 12px;
+            line-height: 1.55;
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+        }
+
+        /* ---------------- Header banner ---------------- */
+        .header {
+            background-color: #4338ca;
+            background: linear-gradient(120deg, #4338ca 0%, #6d28d9 100%);
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 22px 24px;
+            margin-bottom: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .header .brand {
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #c7d2fe;
+            margin-bottom: 6px;
+        }
+
+        .header h1 {
+            font-size: 21px;
+            margin: 0 0 6px 0;
+            color: #ffffff;
+        }
+
+        .header .student-line {
+            font-size: 11.5px;
+            color: #e0e7ff;
+        }
+
+        .header .meta {
+            font-size: 10px;
+            color: #e0e7ff;
+            text-align: right;
+            line-height: 1.6;
+        }
+
+        /* ---------------- Badges ---------------- */
+        .badge {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 14px;
+        }
+
+        .badge-active {
+            background: #d1fae5;
+            color: #047857;
+            border: 1px solid #6ee7b7;
+        }
+
+        .badge-generating {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+        }
+
+        .badge-failed {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .badge-recommended {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #93c5fd;
+        }
+
+        /* ---------------- Section titles ---------------- */
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #312e81;
+            margin: 22px 0 10px 0;
+            padding-left: 10px;
+            border-left: 4px solid #6d28d9;
+        }
+
+        /* ---------------- Cards ---------------- */
+        .card {
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            border-left: 5px solid #6d28d9;
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+        }
+
+        .card.card-blue {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            border-left-color: #2563eb;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-label {
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6d28d9;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .progress-bar-track {
+            background: #e5e7eb;
+            border-radius: 999px;
+            height: 10px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-bar-fill {
+            background: #22c55e;
+            background: linear-gradient(90deg, #4ade80, #16a34a);
+            height: 10px;
+        }
+
+        /* ---------------- Milestones table ---------------- */
+        table.milestones {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table.milestones thead th {
+            text-align: left;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #ffffff;
+            background: #4338ca;
+            padding: 9px 10px;
+        }
+
+        table.milestones tbody tr:nth-child(odd) {
+            background: #f5f3ff;
+        }
+
+        table.milestones tbody tr:nth-child(even) {
+            background: #ffffff;
+        }
+
+        table.milestones td {
+            padding: 9px 10px;
+            border-bottom: 1px solid #ede9fe;
+            vertical-align: top;
+            font-size: 11px;
+        }
+
+        .status-pill {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            display: inline-block;
+        }
+
+        .status-Completed {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .status-InProgress,
+        .status-In-Progress {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .status-Pending {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        /* ---------------- Empty / info states ---------------- */
+        .empty-state {
+            text-align: center;
+            padding: 50px 24px;
+            border-radius: 10px;
+            margin-top: 6px;
+        }
+
+        .empty-state.state-generating {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+        }
+
+        .empty-state.state-failed {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        .empty-state.state-neutral {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .empty-state .icon {
+            font-size: 38px;
+            margin-bottom: 10px;
+        }
+
+        .empty-state h2 {
+            font-size: 15px;
+            margin: 0 0 8px 0;
+            color: #1f2937;
+        }
+
+        .empty-state p {
+            color: #4b5563;
+            font-size: 11.5px;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .ref-tag {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 9.5px;
+            color: #9ca3af;
+            background: #f3f4f6;
+            padding: 3px 10px;
+            border-radius: 6px;
+        }
+
+        /* ---------------- Footer ---------------- */
+        .footer {
+            margin-top: 32px;
+            padding-top: 12px;
+            border-top: 2px solid #ede9fe;
+            font-size: 9px;
+            color: #9ca3af;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div>
+            <div class="brand"> &middot; Career Guidance</div>
+            <h1>Career Path Report</h1>
+            <div class="student-line"><strong>{{ student_name }}</strong> &middot; ID: {{ student_id }}</div>
+        </div>
+        <div class="meta">
+            Generated on<br>{{ generated_on }}
+        </div>
+    </div>
+
+    {# ============================================================ #}
+    {# TYPE 1: ACTIVE PLAN #}
+    {# ============================================================ #}
+    {% if type == "active_plan" %}
+    <span class="badge badge-active">&#9679; Active Plan</span>
+    <div class="section-title">{{ data.career_path or "Career Path" }}</div>
+
+    <div class="card">
+        <div class="stat-row">
+            {% if data.progress_percent is defined %}
+            <div class="stat">
+                <div class="stat-label">Progress</div>
+                <div class="stat-value">{{ data.progress_percent }}%</div>
+                <div class="progress-bar-track">
+
+                </div>
+            </div>
+            {% endif %}
+            {% if data.start_date %}
+            <div class="stat">
+                <div class="stat-label">Started On</div>
+                <div class="stat-value">{{ data.start_date }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if data.milestones %}
+    <div class="section-title" style="font-size: 13px;">Milestones</div>
+    <table class="milestones">
+        <thead>
+            <tr>
+                <th style="width: 28%;">Milestone</th>
+                <th style="width: 16%;">Status</th>
+                <th style="width: 16%;">Target Date</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in data.milestones %}
+            <tr>
+                <td><strong>{{ m.title }}</strong></td>
+                <td>
+                    <span class="status-pill status-{{ (m.status or 'Pending') | replace(' ', '-') }}">
+                        {{ m.status or "Pending" }}
+                    </span>
+                </td>
+                <td>{{ m.target_date or "-" }}</td>
+                <td>{{ m.description or "" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {# ============================================================ #}
+    {# TYPE 2: GENERATING #}
+    {# ============================================================ #}
+    {% elif type == "generating" %}
+    <span class="badge badge-generating">&#9679; Generating</span>
+    <div class="empty-state state-generating">
+        <div class="icon">&#9203;</div>
+        <h2>Your career path is being generated</h2>
+        <p>
+            We're building a personalized plan for
+            <strong>{{ career_path or "your selected track" }}</strong>.
+            This usually takes a few minutes — check back shortly.
+        </p>
+    </div>
+
+    {# ============================================================ #}
+    {# TYPE 3: FAILED #}
+    {# ============================================================ #}
+    {% elif type == "failed" %}
+    <span class="badge badge-failed">&#9679; Generation Failed</span>
+    <div class="empty-state state-failed">
+        <div class="icon">&#9888;</div>
+        <h2>We couldn't generate your career path</h2>
+        <p>
+            The AI-generated plan for
+            <strong>{{ career_path or "this track" }}</strong>
+            could not be completed. Please retry generation from your dashboard.
+        </p>
+        {% if enrollment %}
+        <div class="ref-tag">Reference: {{ enrollment }}</div>
+        {% endif %}
+    </div>
+
+    {# ============================================================ #}
+    {# TYPE 4: RECOMMENDED PATH #}
+    {# ============================================================ #}
+    {% elif type == "recommended_path" %}
+    <span class="badge badge-recommended">&#9679; Recommended Path</span>
+    <div class="section-title">{{ data.career_path or "Suggested Career Path" }}</div>
+
+    <div class="card card-blue">
+        <div class="stat-row">
+            {% if data.match_score is defined %}
+            <div class="stat">
+                <div class="stat-label">Match Score</div>
+                <div class="stat-value">{{ data.match_score }}%</div>
+            </div>
+            {% endif %}
+        </div>
+        {% if data.description %}
+        <div style="margin-top: 10px;">{{ data.description }}</div>
+        {% endif %}
+    </div>
+
+    {% if data.milestones %}
+    <div class="section-title" style="font-size: 13px;">Suggested Milestones</div>
+    <table class="milestones">
+        <thead>
+            <tr>
+                <th style="width: 28%;">Milestone</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in data.milestones %}
+            <tr>
+                <td><strong>{{ m.title }}</strong></td>
+                <td>{{ m.description or "" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {# ============================================================ #}
+    {# FALLBACK #}
+    {# ============================================================ #}
+    {% else %}
+    <div class="empty-state state-neutral">
+        <p>No career path information is available for this student yet.</p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        This report was generated automatically by NexEdu. For questions, contact your student advisor.
+    </div>
+
+</body>
+
+</html>

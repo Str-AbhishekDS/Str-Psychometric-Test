@@ -69,9 +69,45 @@ def get_student_dashboard(student: str) -> dict:
             cell_status = "missed"
         last_30.append({"date": d, "status": cell_status})
 
-    done_30 = sum(1 for l in logs if l.status == "Done")
-    partial_30 = sum(1 for l in logs if l.status == "Partial")
-    missed_30 = sum(1 for l in logs if l.status == "Skipped")
+    # Calculate today's completion progress
+    today_dt = getdate(today())
+    today_done = 0
+    today_partial = 0
+    today_remaining = 0
+    
+    # Get all logs for today
+    today_logged_habits = {l.habit for l in logs if str(getdate(l.log_date)) == str(today_dt) and l.status == "Done"}
+
+    plans = frappe.get_all("Habit Plan", filters={"student": student, "status": "Active"}, fields=["name"])
+    for p in plans:
+        habits = frappe.get_all("Habit", filters={"parent": p.name}, fields=["name", "frequency", "custom_days"])
+        plan_due_today = 0
+        plan_done_today = 0
+        
+        for h in habits:
+            is_due = False
+            day_abbr = today_dt.strftime("%a")
+            if h.frequency == "Daily":
+                is_due = True
+            elif h.frequency == "Weekdays" and day_abbr not in ("Sat", "Sun"):
+                is_due = True
+            elif h.frequency == "Custom Days" and h.custom_days:
+                custom_day_list = [d.strip() for d in h.custom_days.split(",")]
+                if day_abbr in custom_day_list:
+                    is_due = True
+                    
+            if is_due:
+                plan_due_today += 1
+                if h.name in today_logged_habits:
+                    plan_done_today += 1
+                    
+        plan_rem_today = plan_due_today - plan_done_today
+        today_done += plan_done_today
+        
+        if plan_rem_today > 0:
+            today_remaining += plan_rem_today
+            if plan_done_today > 0:
+                today_partial += plan_rem_today
 
     # This week
     this_week = _get_this_week_progress(student, logs)
@@ -87,11 +123,56 @@ def get_student_dashboard(student: str) -> dict:
         "longest_streak": longest_streak,
         "last_30_days": last_30,
         "this_week": this_week,
-        "done_30": done_30,
-        "partial_30": partial_30,
-        "missed_30": missed_30,
+        "today_done": today_done,
+        "today_partial": today_partial,
+        "today_remaining": today_remaining,
         "habits": habits_data
     }
+
+def _get_habit_weekly_data(student: str, habit_doc) -> list:
+    today_date = getdate(today())
+    monday = today_date - timedelta(days=today_date.weekday())
+    
+    logs = frappe.get_all(
+        "Habit Daily Log",
+        filters={
+            "student": student,
+            "habit": habit_doc.name,
+            "log_date": [">=", monday]
+        },
+        fields=["log_date", "status"]
+    )
+    
+    log_by_date = {}
+    for l in logs:
+        d_str = str(getdate(l.log_date))
+        log_by_date[d_str] = l.status
+        
+    weekly_data = []
+    for i in range(7):
+        date_check = monday + timedelta(days=i)
+        date_str = str(date_check)
+        
+        status = log_by_date.get(date_str)
+        if status:
+            if status == "Done":
+                weekly_data.append("done")
+            elif status == "Partial":
+                weekly_data.append("partial")
+            else:
+                weekly_data.append("missed")
+        else:
+            if date_check > today_date:
+                weekly_data.append("none")
+            else:
+                if habit_doc.is_due_today(date_check):
+                    if date_check == today_date:
+                        weekly_data.append("none")
+                    else:
+                        weekly_data.append("missed")
+                else:
+                    weekly_data.append("none")
+    return weekly_data
 
 @frappe.whitelist(allow_guest=True)  
 def _get_active_habits_summary(student: str) -> list:
@@ -107,11 +188,14 @@ def _get_active_habits_summary(student: str) -> list:
             "Habit",
             filters={"parent": plan["name"]},
             fields=[
-                "habit_name", "habit_type", "frequency",
+                "name", "habit_name", "habit_type", "frequency",
                 "current_streak", "longest_streak",
                 "completion_rate", "reminder_time"
             ]
         )
+        for h_dict in plan["habits"]:
+            h_doc = frappe.get_doc("Habit", h_dict["name"])
+            h_dict["weekly_data"] = _get_habit_weekly_data(student, h_doc)
     return plans
 
 
@@ -254,7 +338,7 @@ def log_daily_habits(student: str, logs) -> dict:
             errors.append({"habit": None, "error": "Invalid log format"})
             continue
 
-        habit_input = entry.get("habit")
+        habit_input = entry.get("habit") or entry.get("habit_id")
         if not habit_input:
             continue
 
@@ -281,6 +365,7 @@ def log_daily_habits(student: str, logs) -> dict:
                 "doctype": "Habit Daily Log",
                 "habit": habit_obj.name,
                 "student": student,
+                "habit_plan": habit_obj.parent,
                 "log_date": today(),
                 "status": entry.get("status", "Done"),
                 "duration_actual_min": entry.get("duration_actual_min"),
@@ -558,9 +643,12 @@ def get_student_plans(student: str, status: str = None) -> list:
         p["habits"] = frappe.get_all(
             "Habit",
             filters={"parent": p["name"]},
-            fields=["habit_name", "habit_type", "frequency", "current_streak",
+            fields=["name", "habit_name", "habit_type", "frequency", "current_streak",
                     "longest_streak", "completion_rate", "reminder_time"]
         )
+        for h_dict in p["habits"]:
+            h_doc = frappe.get_doc("Habit", h_dict["name"])
+            h_dict["weekly_data"] = _get_habit_weekly_data(student, h_doc)
     return plans
 
 
@@ -658,6 +746,7 @@ def get_todays_pending_habits(student: str) -> list:
                 h = frappe.get_doc("Habit", row.name)
                 if h.is_due_today():
                     pending.append({
+                        "id": row.name,
                         "habit_name": row.habit_name,
                         "habit_type": row.habit_type,
                         "target_duration_min": row.target_duration_min,
@@ -710,24 +799,52 @@ def _check_student_access(student: str):
 
 
 def _get_overall_streaks(student: str):
-    """Compute max current streak and max longest streak across all active habits."""
-    plans = frappe.get_all(
-        "Habit Plan",
-        filters={"student": student, "status": "Active"},
-        fields=["name"]
+    """Compute overall current streak and longest streak based on any habit logged."""
+    logs = frappe.get_all(
+        "Habit Daily Log",
+        filters={"student": student, "status": "Done"},
+        fields=["log_date"]
     )
-    max_current = 0
-    max_longest = 0
-    for p in plans:
-        rows = frappe.get_all(
-            "Habit",
-            filters={"parent": p.name},
-            fields=["current_streak", "longest_streak"]
-        )
-        for r in rows:
-            max_current = max(max_current, r.current_streak or 0)
-            max_longest = max(max_longest, r.longest_streak or 0)
-    return max_current, max_longest
+    if not logs:
+        return 0, 0
+
+    done_dates = set()
+    for l in logs:
+        d = l.log_date
+        if hasattr(d, "date"):
+            d = d.date()
+        else:
+            d = getdate(d)
+        done_dates.add(d)
+
+    if not done_dates:
+        return 0, 0
+
+    # Current streak
+    current_streak = 0
+    check_date = getdate(today())
+    
+    if check_date not in done_dates:
+        yesterday = check_date - timedelta(days=1)
+        if yesterday in done_dates:
+            check_date = yesterday
+
+    while check_date in done_dates:
+        current_streak += 1
+        check_date -= timedelta(days=1)
+
+    # Longest streak
+    sorted_dates = sorted(done_dates)
+    longest = 1
+    streak = 1
+    for i in range(1, len(sorted_dates)):
+        if (sorted_dates[i] - sorted_dates[i - 1]).days == 1:
+            streak += 1
+            longest = max(longest, streak)
+        else:
+            streak = 1
+
+    return current_streak, longest
 
 
 def _get_this_week_progress(student: str, logs: list) -> list:
@@ -744,22 +861,51 @@ def _get_this_week_progress(student: str, logs: list) -> list:
             log_by_date[ds] = []
         log_by_date[ds].append(l.status)
 
+    # Calculate due habits for each day of the current week
+    plans = frappe.get_all("Habit Plan", filters={"student": student, "status": "Active"}, fields=["name"])
+    due_by_date = {str(monday + timedelta(days=i)): 0 for i in range(7)}
+    
+    for p in plans:
+        habits = frappe.get_all("Habit", filters={"parent": p.name}, fields=["frequency", "custom_days"])
+        for h in habits:
+            custom_day_list = [d.strip() for d in h.custom_days.split(",")] if h.custom_days else []
+            for i in range(7):
+                cur_date = monday + timedelta(days=i)
+                d_str = str(cur_date)
+                day_abbr = cur_date.strftime("%a")
+                
+                if h.frequency == "Daily":
+                    due_by_date[d_str] += 1
+                elif h.frequency == "Weekdays" and day_abbr not in ("Sat", "Sun"):
+                    due_by_date[d_str] += 1
+                elif h.frequency == "Custom Days" and day_abbr in custom_day_list:
+                    due_by_date[d_str] += 1
+
     week = []
     for i, day_name in enumerate(days_order):
         d = str(monday + timedelta(days=i))
         statuses = log_by_date.get(d, [])
-        if not statuses:
-            cell_status = "none"
-        elif all(s == "Done" for s in statuses):
-            cell_status = "done"
-        elif any(s == "Done" for s in statuses):
-            cell_status = "partial"
+        total_due = due_by_date.get(d, 0)
+        done_count = sum(1 for s in statuses if s == "Done")
+        
+        if total_due == 0:
+            if done_count > 0:
+                cell_status = "done"
+                progress = 100
+            else:
+                cell_status = "none"
+                progress = 0
         else:
-            cell_status = "missed"
-        total = len(statuses)
-        done = sum(1 for s in statuses if s == "Done")
-        progress = round((done / total) * 100) if total else 0
+            if done_count == 0:
+                cell_status = "none"
+            elif done_count >= total_due:
+                cell_status = "done"
+            else:
+                cell_status = "partial"
+            progress = round((done_count / total_due) * 100)
+            
         week.append({"day": day_name, "date": d, "status": cell_status, "progress": progress})
+        
     return week
 
 @frappe.whitelist(allow_guest=True)

@@ -130,78 +130,87 @@ def check_and_create_career_path(career_path):
             frappe.db.commit()
 
     if not exists or is_incomplete:
-        try:
-            from job_search_ai.agents.skill_agent.skill_agent import SkillAgent
-            from job_search_ai.agents.skill_agent.schemas import SkillRequest
+        _do_create_career_path(career_path)
+
+
+def _do_create_career_path(career_path):
+    exists = frappe.db.exists("Career Path", career_path)
+    if exists:
+        doc = frappe.get_doc("Career Path", career_path)
+        if doc.path_milestone:
+            return
             
-            agent = SkillAgent()
-            request = SkillRequest(role=career_path)
-            res = agent.run(request, save_to_doctype=False)
-            profile = res.profile
-            
-            cp_doc = frappe.get_doc({
-                "doctype": "Career Path",
-                "path_name": career_path,
-                "path_type": "Job",
-                "difficulty_level": "Moderate",
-                "target_role": career_path,
-                "estimated_duration_months": 6,
-                "published": 1,
-                "prerequisite_skills": [],
-                "path_milestone": []
+    try:
+        from job_search_ai.agents.skill_agent.skill_agent import SkillAgent
+        from job_search_ai.agents.skill_agent.schemas import SkillRequest
+        
+        agent = SkillAgent()
+        request = SkillRequest(role=career_path)
+        res = agent.run(request, save_to_doctype=False)
+        profile = res.profile
+        
+        cp_doc = frappe.get_doc({
+            "doctype": "Career Path",
+            "path_name": career_path,
+            "path_type": "Job",
+            "difficulty_level": "Moderate",
+            "target_role": career_path,
+            "estimated_duration_months": 6,
+            "published": 1,
+            "prerequisite_skills": [],
+            "path_milestone": []
+        })
+        
+        for skill in profile.foundation_skills:
+            ensure_skill_exists(skill)
+            cp_doc.append("prerequisite_skills", {
+                "prerequisite_skills": skill,
+                "level": "Beginner"
             })
             
-            for skill in profile.foundation_skills:
-                ensure_skill_exists(skill)
-                cp_doc.append("prerequisite_skills", {
-                    "prerequisite_skills": skill,
-                    "level": "Beginner"
-                })
-                
-            for skill in profile.core_domain_skills:
-                ensure_skill_exists(skill)
-                ensure_category_exists("Core Domain")
-                cp_doc.append("path_milestone", {
-                    "milestone_title": f"Master {skill}",
-                    "category": "Core Domain",
-                    "skill": skill,
-                    "milestone_type": "Learn",
-                    "required_skill_level": "Intermediate",
-                    "is_mandatory": 1,
-                    "duration_days": 10
-                })
-                
-            for skill in profile.industry_skills:
-                ensure_skill_exists(skill)
-                ensure_category_exists("Industry")
-                cp_doc.append("path_milestone", {
-                    "milestone_title": f"Master {skill}",
-                    "category": "Industry",
-                    "skill": skill,
-                    "milestone_type": "Learn",
-                    "required_skill_level": "Intermediate",
-                    "is_mandatory": 1,
-                    "duration_days": 10
-                })
-                
-            for skill in profile.emerging_skills:
-                ensure_skill_exists(skill)
-                ensure_category_exists("Emerging")
-                cp_doc.append("path_milestone", {
-                    "milestone_title": f"Master {skill}",
-                    "category": "Emerging",
-                    "skill": skill,
-                    "milestone_type": "Learn",
-                    "required_skill_level": "Intermediate",
-                    "is_mandatory": 1,
-                    "duration_days": 10
-                })
-                
-            cp_doc.insert(ignore_permissions=True)
-            frappe.db.commit()
-        except Exception as e:
-            frappe.log_error(f"Failed to auto-create Career Path for {career_path}: {str(e)}", "Career Path Auto-Creation")
-            frappe.throw(f"Career Path '{career_path}' does not exist and could not be auto-created: {str(e)}")
+        for skill in profile.core_domain_skills:
+            ensure_skill_exists(skill)
+            ensure_category_exists("Core Domain")
+            cp_doc.append("path_milestone", {
+                "milestone_title": f"Master {skill}",
+                "category": "Core Domain",
+                "skill": skill,
+                "milestone_type": "Learn",
+                "required_skill_level": "Intermediate",
+                "is_mandatory": 1,
+                "duration_days": 10
+            })
+            
+        for skill in profile.industry_skills:
+            ensure_skill_exists(skill)
+            ensure_category_exists("Industry")
+            cp_doc.append("path_milestone", {
+                "milestone_title": f"Master {skill}",
+                "category": "Industry",
+                "skill": skill,
+                "milestone_type": "Learn",
+                "required_skill_level": "Intermediate",
+                "is_mandatory": 1,
+                "duration_days": 10
+            })
+            
+        for skill in profile.emerging_skills:
+            ensure_skill_exists(skill)
+            ensure_category_exists("Emerging")
+            cp_doc.append("path_milestone", {
+                "milestone_title": f"Master {skill}",
+                "category": "Emerging",
+                "skill": skill,
+                "milestone_type": "Learn",
+                "required_skill_level": "Intermediate",
+                "is_mandatory": 1,
+                "duration_days": 10
+            })
+            
+        cp_doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(f"Failed to auto-create Career Path for {career_path}: {str(e)}", "Career Path Auto-Creation")
 
 
 def build_roadmap_template_from_career_path(career_path):
@@ -752,6 +761,23 @@ def get_career_path_detail(career_path, student=None):
         [if student]: fit_score, matched/partial/missing skills, enrollment name
     """
     check_and_create_career_path(career_path)
+    
+    if not frappe.db.exists("Career Path", career_path):
+        return {
+            "career_path"             : career_path,
+            "path_name"               : career_path,
+            "difficulty_level"        : "Moderate",
+            "estimated_duration_months": 6,
+            "target_role"             : career_path,
+            "prerequisite_skills"     : [],
+            "milestones"              : [],
+            "milestone_tree"          : {},
+            "prereq_count"            : 0,
+            "milestone_count"         : 0,
+            "total_count"             : 0,
+            "status"                  : "generating"
+        }
+
     doc = frappe.get_doc("Career Path", career_path)
 
     prereqs = [{"skill": r.prerequisite_skills, "required_skill_level": r.level}
@@ -1247,11 +1273,29 @@ def get_hierarchy_skills_for_path(career_path):
     check_and_create_career_path(career_path)
 
     if not frappe.db.exists("Career Path", career_path):
+        foundation = []
+        core = []
+        industry = []
+        emerging = []
+        
+        ck_name = frappe.db.get_value("Career Knowledge", {"career_name": career_path}, "name")
+        if ck_name:
+            ck = frappe.get_doc("Career Knowledge", ck_name)
+            req_skills = [s.skill_name for s in ck.skills if s.skill_type == "Required"]
+            pref_skills = [s.skill_name for s in ck.skills if s.skill_type == "Preferred"]
+            
+            foundation = req_skills[:2]
+            core = req_skills[2:len(req_skills)//2 + 1] if len(req_skills) > 2 else []
+            industry = req_skills[len(req_skills)//2 + 1:] if len(req_skills) > 2 else []
+            emerging = pref_skills
+            
         return {
-            "foundation_skills": [],
-            "core_domain_skills": [],
-            "industry_skills": [],
-            "emerging_skills": []
+            "foundation_skills": foundation,
+            "core_domain_skills": core,
+            "industry_skills": industry,
+            "emerging_skills": emerging,
+            "status": "generating",
+            "message": "AI is actively generating a detailed curriculum. These are preliminary skills."
         }
 
     doc = frappe.get_doc("Career Path", career_path)
