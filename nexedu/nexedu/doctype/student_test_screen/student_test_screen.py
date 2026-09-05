@@ -104,7 +104,7 @@ class StudentTestScreen(Document):
         doc.student_test_screen = self.name
         doc.psychometric_test = self.test
         doc.psychometric_test_type = psychometric_test_type
-        doc.member = frappe.session.user
+        doc.member = getattr(self, "student_email", None) or (self.owner if self.owner and self.owner != "Guest" else None) or frappe.session.user
         doc.score = obtained_score
         doc.score_out_of = total_score
         doc.percentage = percentage

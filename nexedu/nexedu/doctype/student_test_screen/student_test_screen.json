@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "{test_type}-.####",
+ "autoname": "{test}-.####",
  "creation": "2026-02-10 13:03:09.544578",
  "doctype": "DocType",
  "engine": "InnoDB",
